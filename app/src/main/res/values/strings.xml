@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">文件管理</string>
+    <string name="action_settings">设置</string>
+    <string name="result_cout">搜索到%1$d个文件</string>
+    <string name="searchtitle">搜索</string>
+    <string name="deletetitle">删除</string>
+    <string name="selectAll">全选</string>
+</resources>
