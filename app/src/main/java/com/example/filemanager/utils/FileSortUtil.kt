@@ -15,6 +15,7 @@ import java.io.File
 
 /**
  * Created by 11046 on 2017/9/23.
+ * 分类相关
  */
 
 class FileSortUtil{
@@ -55,25 +56,6 @@ class FileSortUtil{
                 }
 
             }
-        }
-
-        //添加
-        fun insertFile(path:String){
-            val file = File(path)
-            val filebean = FileBean(file)
-            if (file.parent == Environment.getExternalStorageDirectory().path+"/Download" ){
-                FileSortUtil().addFileByType(FileType.download,filebean)
-            }
-            FileSortUtil().addFileByType(
-                    when(filebean.getIconID()){
-                        2 -> FileType.text
-                        3 -> FileType.music
-                        4 -> FileType.video
-                        5 -> FileType.zip
-                        6 -> FileType.apk
-                        7 -> FileType.photo
-                        else -> null
-            },filebean)
         }
     }
 

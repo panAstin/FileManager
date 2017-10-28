@@ -6,9 +6,6 @@ import android.support.v4.app.FragmentPagerAdapter
 import com.example.filemanager.fragments.FileListFragment
 import com.example.filemanager.fragments.FileSortFragment
 
-/**
- * Created by 11046 on 2017/4/24.
- */
 class FragmentPageAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
     private val COUNT = 2
     private val title=arrayOf("文件列表", "文件分类")

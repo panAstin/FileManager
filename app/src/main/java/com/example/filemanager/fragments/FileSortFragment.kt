@@ -1,5 +1,6 @@
 package com.example.filemanager.fragments
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Intent
 import android.os.Bundle
@@ -21,6 +22,7 @@ import android.content.IntentFilter
 
 /**
  * Created by 11046 on 2017/4/29.
+ * 文件分类
  */
 class FileSortFragment:Fragment() {
     private var mRecyclerView: RecyclerView? = null
@@ -77,7 +79,8 @@ class FileSortFragment:Fragment() {
     /**
      * 定义Handler
      */
-    private var handler = object : Handler() {
+    private var handler = @SuppressLint("HandlerLeak")
+    object : Handler() {
         override fun handleMessage(msg: Message) {
             //更新UI
             fsadapter!!.notifyDataSetChanged()

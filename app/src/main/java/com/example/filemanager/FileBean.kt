@@ -7,23 +7,14 @@ import java.util.*
 
 /**
  * Created by 11046 on 2017/9/27.
+ * 封装文件与文件大小、文件图标
  */
-class FileBean(file: File) {
-    private var name:String = ""
-    private var path:String = ""
+class FileBean(private var file: File) {
     private var date:String = ""
     private var size:String = ""
     private var iconID :Int = 0
     private var format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")   //时间格式
     private val txttypes = arrayOf("text/plain", "application/msword", "application/pdf", "application/vnd.ms-powerpoint", "application/vnd.ms-excel") //文档类型
-
-    fun setName(name:String){
-        this.name = name
-    }
-
-    fun setPath(path:String){
-        this.path = path
-    }
 
     fun setDate(date:String){
         this.date = date
@@ -33,17 +24,13 @@ class FileBean(file: File) {
         this.size = size
     }
 
-    fun getName():String = name
-
-    fun getPath():String = path
-
     fun getDate():String = date
 
     fun getSize():String = size
 
     fun getIconID(): Int = iconID
 
-    fun getFile():File = File(path)
+    fun getFile():File = file
 
     private fun initIcon(file: File){
         val type = FileUtil.getMIMEType(file)
@@ -63,8 +50,6 @@ class FileBean(file: File) {
     }
 
     init {
-        this.name = file.name
-        this.path = file.path
         this.date = format.format(Date(file.lastModified()))
         this.size = FileUtil.getAutoFileOrFilesSize(file.path)
         initIcon(file)

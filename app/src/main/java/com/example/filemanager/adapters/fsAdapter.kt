@@ -11,10 +11,6 @@ import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.FileType
 import com.example.filemanager.R
 
-
-/**
- * Created by 11046 on 2017/9/18.
- */
 internal class fsAdapter //参数初始化
 (context: Context) : RecyclerView.Adapter<fsAdapter.myViewHolder>() {
     private val inflater: LayoutInflater = LayoutInflater.from(context)

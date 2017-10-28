@@ -10,7 +10,6 @@ import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.CheckBox
-import android.widget.CompoundButton
 import android.widget.ImageView
 import android.widget.TextView
 import com.example.filemanager.FileBean
@@ -59,12 +58,12 @@ internal class fmAdapter//参数初始化
 
     private fun inititem(holder: myViewHolder,fileBean: FileBean) {
         val i = fileBeans!!.indexOf(fileBean)
-        holder.name.text = fileBean.getName()
+        holder.name.text = fileBean.getFile().name
         holder.size.text = fileBean.getSize()
         holder.date.text = fileBean.getDate()
         if(fileBean.getIconID() == icons.size){
             Picasso.with(inflater.context)          //使用Picasso生成图片缩略图
-                    .load(File(fileBean.getPath()))
+                    .load(File(fileBean.getFile().path))
                     .config(Bitmap.Config.RGB_565)
                     .transform(getTransformation(holder.image))
                     .into(holder.image)

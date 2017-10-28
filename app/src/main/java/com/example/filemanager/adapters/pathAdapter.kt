@@ -10,9 +10,6 @@ import android.widget.TextView
 import com.example.filemanager.R
 import java.util.ArrayList
 
-/**
- * Created by 11046 on 2017/9/20.
- */
 internal class pathAdapter//参数初始化
 (context: Context, pa: ArrayList<String>) : RecyclerView.Adapter<pathAdapter.myViewHolder>() {
     private val inflater: LayoutInflater

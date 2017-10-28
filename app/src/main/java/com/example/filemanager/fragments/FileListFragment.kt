@@ -1,5 +1,6 @@
 package com.example.filemanager.fragments
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Context
@@ -27,6 +28,7 @@ import kotlin.collections.ArrayList
 
 /**
  * Created by 11046 on 2017/4/24.
+ * 文件列表
  */
 class FileListFragment : Fragment() {
     private val ROOT_PATH = Environment.getExternalStorageDirectory().path        //根目录
@@ -193,8 +195,8 @@ class FileListFragment : Fragment() {
                     for (selectfile in selectedFiles!!) {
                         //需要花时间的方法
                         try {
-                            val targetpath = currentpath + "/" + selectfile.getName()
-                            FileUtil.copy(selectfile.getPath(), targetpath)
+                            val targetpath = currentpath + "/" + selectfile.getFile().name
+                            FileUtil.copy(selectfile.getFile().path, targetpath)
                             fmadapter!!.addItem(FileBean(File(targetpath)))
                             if(MediaUtil.isMediaFile(targetpath)){
                                 MediaUtil.sendScanFileBroadcast(context,targetpath)
@@ -320,7 +322,7 @@ class FileListFragment : Fragment() {
                     fmadapter!!.notifyDataSetChanged()
                     mactivity?.invalidateOptionsMenu()
                 }else{
-                    val path =mFiles!![viewHolder.adapterPosition].getPath()
+                    val path =mFiles!![viewHolder.adapterPosition].getFile().path
                     val file = File(path)
                     if (file.exists() && file.canRead()) {            // 文件存在并可读
                         if (file.isDirectory) {
@@ -479,7 +481,8 @@ class FileListFragment : Fragment() {
     /**
      * 定义Handler
      */
-    private var handler = object : Handler() {
+    private var handler = @SuppressLint("HandlerLeak")
+    object : Handler() {
         override fun handleMessage(msg: Message) {
             //关闭ProgressDialog
             progressDialog?.dismiss()

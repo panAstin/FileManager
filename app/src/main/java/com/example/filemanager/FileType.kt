@@ -2,6 +2,7 @@ package com.example.filemanager
 
 /**
  * Created by 11046 on 2017/9/23.
+ * 文件类型
  */
 enum class FileType {
     text,

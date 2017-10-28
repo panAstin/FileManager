@@ -4,7 +4,6 @@ import UI.SortActivityUI
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.graphics.Color
-import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -34,13 +33,13 @@ class SortActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SortActivityUI().setContentView(this)
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+        //if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS or WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             window.statusBarColor = Color.TRANSPARENT
             window.navigationBarColor = Color.TRANSPARENT
-        }
+        //}
         //接收数据
         val bundle = this.intent.extras
         //接收sort值
@@ -62,7 +61,7 @@ class SortActivity : AppCompatActivity() {
                     fmadapter!!.notifyDataSetChanged()
                     this@SortActivity.invalidateOptionsMenu()
                 }else{
-                    val path = sFiles!![viewHolder.adapterPosition].getPath()
+                    val path = sFiles!![viewHolder.adapterPosition].getFile().path
                     val file = File(path)
                     if (file.exists() && file.canRead()) {            // 文件存在并可读
                         FileUtil.openFile(this@SortActivity,file)              //打开文件

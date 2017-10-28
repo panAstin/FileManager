@@ -15,6 +15,7 @@ import java.io.File
 
 /**
  * Created by 11046 on 2017/9/26.
+ * 多媒体库相关操作
  */
 object MediaUtil {
     private val LOGTAG = "MediaUtils"
