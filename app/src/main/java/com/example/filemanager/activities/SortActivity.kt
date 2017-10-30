@@ -81,8 +81,12 @@ class SortActivity : AppCompatActivity() {
 
     private fun showFiles(sort:Int){
         sFiles = ArrayList()
-        if(FileSortUtil().getFilePathsByType(FileType.getFileTypeByOrdinal(sort)) != null){
-            sFiles!!.addAll(FileSortUtil().getFilePathsByType(FileType.getFileTypeByOrdinal(sort))!!)
+        val fileBeans = FileSortUtil().getFilePathsByType(FileType.getFileTypeByOrdinal(sort))
+        if(fileBeans != null){
+          for (fb in fileBeans){
+              fb.initIcon(applicationContext)
+              sFiles!!.add(fb)
+          }
         }
         fmadapter = fmAdapter(this,sFiles!!)
         sRecyclerView?.adapter = fmadapter           //设置adapter

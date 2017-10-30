@@ -28,7 +28,6 @@ internal class fmAdapter//参数初始化
         var selectFlag = 0          //选择模式标识
     }
     private val animation: Animation
-    private val icons = arrayOf(R.drawable.dict,R.drawable.file,R.drawable.doc,  R.drawable.music, R.drawable.video, R.drawable.zip, R.drawable.apk)
 
     init {
         fileBeans = fa
@@ -61,14 +60,14 @@ internal class fmAdapter//参数初始化
         holder.name.text = fileBean.getFile().name
         holder.size.text = fileBean.getSize()
         holder.date.text = fileBean.getDate()
-        if(fileBean.getIconID() == icons.size){
+        if(fileBean.getIcon()==null){
             Picasso.with(inflater.context)          //使用Picasso生成图片缩略图
                     .load(File(fileBean.getFile().path))
                     .config(Bitmap.Config.RGB_565)
                     .transform(getTransformation(holder.image))
                     .into(holder.image)
         }else{
-            holder.image.setImageResource(icons[fileBean.getIconID()])
+            holder.image.setImageBitmap(fileBean.getIcon())
         }
         holder.cb.tag = i
         if (selectFlag >0){

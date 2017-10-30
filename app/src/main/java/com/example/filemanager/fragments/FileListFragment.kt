@@ -12,6 +12,7 @@ import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.ArrayMap
+import android.util.Log
 import android.view.*
 import android.widget.EditText
 import android.widget.SearchView
@@ -33,7 +34,6 @@ import kotlin.collections.ArrayList
 class FileListFragment : Fragment() {
     private val ROOT_PATH = Environment.getExternalStorageDirectory().path        //根目录
     private var mFiles: ArrayList<FileBean>? = null     //存储文件信息
-    private var Pathnotes: ArrayList<String>? = null     //存储路径记录
     private var currentpath = ROOT_PATH        //当前文件路径
     private var mRecyclerView: RecyclerView? = null
     private var patharea: RecyclerView? = null
@@ -46,6 +46,7 @@ class FileListFragment : Fragment() {
     private var mactivity: MainActivity? = null
     companion object {
         var selectedFiles: ArrayList<FileBean>? = null
+        var Pathnotes = ArrayList<String>()     //存储路径记录
     }
 
     fun newInstance(): FileListFragment {
@@ -280,7 +281,7 @@ class FileListFragment : Fragment() {
      */
     private fun initfilelist(view:View){
         mFiles = ArrayList()
-        Pathnotes = ArrayList()
+        Pathnotes.clear()
         patharea = view.findViewById(R.id.patharea) as RecyclerView
         pathtxt = view.findViewById(R.id.pathtxt) as TextView
         mRecyclerView = view.findViewById(R.id.filelist) as RecyclerView
@@ -291,7 +292,6 @@ class FileListFragment : Fragment() {
         //设置点击监听
         patharea!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(patharea){
             override fun onItemLongClick(viewHolder: RecyclerView.ViewHolder?) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
             }
 
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder?) {
@@ -299,7 +299,7 @@ class FileListFragment : Fragment() {
                 var topath = ROOT_PATH
                 //点击的根据路径项得到跳转路径
                 while(i <= viewHolder!!.adapterPosition ){
-                    topath += "/" + Pathnotes!![i]
+                    topath += "/" + Pathnotes[i]
                     i++
                 }
                 //重置选择
@@ -309,6 +309,8 @@ class FileListFragment : Fragment() {
             }
 
         } )
+        pathadapter= pathAdapter(context)
+        patharea!!.adapter= pathadapter
         mRecyclerView!!.layoutManager = LinearLayoutManager(view.context)          //设置布局管理器
         mRecyclerView!!.itemAnimator = DefaultItemAnimator()               //设置Item增加、移除动画
         //设置点击与长按监听器
@@ -350,22 +352,24 @@ class FileListFragment : Fragment() {
      */
     private fun showFileDir(path: String) {
         mFiles = ArrayList()
-        Pathnotes = ArrayList()
+        Pathnotes.clear()
         val file = File(path)
         val files = file.listFiles()
         val strpath = path.substring(path.indexOf("0"),path.length)
         Pathnotes = strpath.split("/") as ArrayList<String>  //分割路径
+        var count = 0;
         files
                 .filterNot {
                     it.isHidden      //筛选隐藏文件
                 }
-                .forEach { mFiles!!.add(FileBean(it)) }
+                .forEach {
+                    val fb  = FileBean(it)
+                    fb.initIcon(context)
+                    mFiles!!.add(fb) }
         SEARCH_SWITCH = 0
-
         currentpath = path
 
-        pathadapter= pathAdapter(context, Pathnotes!!)
-        patharea!!.adapter= pathadapter
+        pathadapter?.notifyDataSetChanged()
         fmadapter = fmAdapter(context,mFiles!!)
         mRecyclerView?.adapter = fmadapter           //设置adapter
     }
