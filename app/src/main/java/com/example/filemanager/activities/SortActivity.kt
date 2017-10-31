@@ -76,6 +76,8 @@ class SortActivity : AppCompatActivity() {
                 changeSelecFlag(viewHolder.adapterPosition)
             }
         })
+        fmadapter = fmAdapter(this)
+        sRecyclerView?.adapter = fmadapter           //设置adapter
         showFiles(sort)
     }
 
@@ -88,8 +90,7 @@ class SortActivity : AppCompatActivity() {
               sFiles!!.add(fb)
           }
         }
-        fmadapter = fmAdapter(this,sFiles!!)
-        sRecyclerView?.adapter = fmadapter           //设置adapter
+        fmadapter?.setListData(sFiles!!)
     }
 
     private fun displaySnackbar(message: String) {

@@ -12,7 +12,6 @@ import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.ArrayMap
-import android.util.Log
 import android.view.*
 import android.widget.EditText
 import android.widget.SearchView
@@ -47,6 +46,7 @@ class FileListFragment : Fragment() {
     companion object {
         var selectedFiles: ArrayList<FileBean>? = null
         var Pathnotes = ArrayList<String>()     //存储路径记录
+        @Volatile var isStop = false            //线程中断标识
     }
 
     fun newInstance(): FileListFragment {
@@ -90,18 +90,21 @@ class FileListFragment : Fragment() {
                     initprogressdialog("正在搜索...","请稍候...",0)
                     //新建线程
                      val mthread = Thread(Runnable {
-                        //需要花时间的方法
-                        try {
-                           showSearchresult(query)
-                        } catch(e:Exception) {
-                            e.printStackTrace()
-                        } finally {
-                            progressDialog?.dismiss()
-                        }
+                         while (!isStop){
+                             //需要花时间的方法
+                             try {
+                                 showSearchresult(query)
+                             } catch(e:Exception) {
+                                 e.printStackTrace()
+                                 break
+                             } finally {
+                                 progressDialog?.dismiss()
+                             }
+                         }
                     })
                     progressDialog?.setOnCancelListener({
                         try {
-                            mthread.interrupt()
+                            isStop = true
                             displaySnackbar("搜索已中断！")
                         } catch (e:Exception){
                             e.printStackTrace()
@@ -343,6 +346,8 @@ class FileListFragment : Fragment() {
                 changeSelecFlag(viewHolder.adapterPosition)    //进入选择模式
             }
         })
+        fmadapter = fmAdapter(context)
+        mRecyclerView?.adapter = fmadapter           //设置adapter
         showFileDir(ROOT_PATH)
     }
 
@@ -357,7 +362,6 @@ class FileListFragment : Fragment() {
         val files = file.listFiles()
         val strpath = path.substring(path.indexOf("0"),path.length)
         Pathnotes = strpath.split("/") as ArrayList<String>  //分割路径
-        var count = 0;
         files
                 .filterNot {
                     it.isHidden      //筛选隐藏文件
@@ -370,8 +374,7 @@ class FileListFragment : Fragment() {
         currentpath = path
 
         pathadapter?.notifyDataSetChanged()
-        fmadapter = fmAdapter(context,mFiles!!)
-        mRecyclerView?.adapter = fmadapter           //设置adapter
+        fmadapter?.setListData(mFiles!!)
     }
 
     //提示信息
@@ -416,7 +419,9 @@ class FileListFragment : Fragment() {
                         fileBeans.addAll(FileSearch(key, it.path))
                     }
                     if (key in it.name) {
-                        fileBeans.add(FileBean(it))
+                        val fb = FileBean(it)
+                        fb.initIcon(context)
+                        fileBeans.add(fb)
                         RESULT_COUNT++
                     }
                 }
@@ -431,7 +436,7 @@ class FileListFragment : Fragment() {
         mFiles= FileSearch(keywd, currentpath)
         SEARCH_SWITCH = 1
         val msg = Message()
-        msg.obj = fmAdapter(context,mFiles!!)
+        msg.arg1 = 1
         handler.sendMessage(msg)   //传递结果集
     }
 
@@ -491,8 +496,9 @@ class FileListFragment : Fragment() {
             //关闭ProgressDialog
             progressDialog?.dismiss()
             //更新UI
-            fmadapter = msg.obj as fmAdapter
-            mRecyclerView!!.adapter = fmadapter
+            if(msg.arg1 == 1){
+                fmadapter?.setListData(mFiles!!)
+            }
             patharea!!.visibility = View.GONE
             pathtxt!!.visibility = View.VISIBLE
             if (fmadapter!!.itemCount == 0) {

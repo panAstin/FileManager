@@ -20,9 +20,9 @@ import java.io.File
 import kotlin.collections.ArrayList
 
 internal class fmAdapter//参数初始化
-(context: Context, fa: ArrayList<FileBean>) : RecyclerView.Adapter<fmAdapter.myViewHolder>() {
+(context: Context) : RecyclerView.Adapter<fmAdapter.myViewHolder>() {
     private val inflater: LayoutInflater
-    private var fileBeans: ArrayList<FileBean>? = null    //存储文件信息
+    private var fileBeans: ArrayList<FileBean> = ArrayList()    //存储文件信息
     companion object {
         var isSelectd: ArrayMap<Int,Boolean>? =null   // 存储CheckBox选择信息
         var selectFlag = 0          //选择模式标识
@@ -30,7 +30,7 @@ internal class fmAdapter//参数初始化
     private val animation: Animation
 
     init {
-        fileBeans = fa
+        //fileBeans = fa
         isSelectd = ArrayMap()
         inflater = LayoutInflater.from(context)
         animation = AnimationUtils.loadAnimation(context, R.anim.list_anim)
@@ -39,13 +39,13 @@ internal class fmAdapter//参数初始化
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int)= myViewHolder(inflater.inflate(R.layout.file, parent, false))
 
     override fun onBindViewHolder(holder: myViewHolder, position: Int) {
-        val filebean = fileBeans!![position]
+        val filebean = fileBeans[position]
         inititem(holder,filebean)
     }
 
     override fun getItemId(position: Int) = position.toLong()
 
-    override fun getItemCount() =  fileBeans!!.size
+    override fun getItemCount() =  fileBeans.size
 
     class myViewHolder internal constructor(view: View) : RecyclerView.ViewHolder(view) {
         internal val name: TextView = view.findViewById(R.id.textView) as TextView
@@ -56,7 +56,7 @@ internal class fmAdapter//参数初始化
     }
 
     private fun inititem(holder: myViewHolder,fileBean: FileBean) {
-        val i = fileBeans!!.indexOf(fileBean)
+        val i = fileBeans.indexOf(fileBean)
         holder.name.text = fileBean.getFile().name
         holder.size.text = fileBean.getSize()
         holder.date.text = fileBean.getDate()
@@ -78,6 +78,11 @@ internal class fmAdapter//参数初始化
         }
     }
 
+    fun setListData(fileBeans: ArrayList<FileBean>){
+        this.fileBeans = fileBeans
+        this.notifyDataSetChanged()
+    }
+
     fun changeSelecFlag(){
         selectFlag = when{
             selectFlag > 0 -> 0
@@ -95,7 +100,7 @@ internal class fmAdapter//参数初始化
         do {
             isSelectd!!.put(i,false)
             i++
-        }while (i<fileBeans!!.size)
+        }while (i<fileBeans.size)
     }
 
     fun getSelectCount():Int{
@@ -109,13 +114,13 @@ internal class fmAdapter//参数初始化
     }
 
     fun addItem(fileBean: FileBean) {
-        fileBeans!!.add(fileBean)
-        val position = fileBeans!!.indexOf(fileBean)
+        fileBeans.add(fileBean)
+        val position = fileBeans.indexOf(fileBean)
         notifyItemInserted(position)
     }
 
     fun removeItem(position: Int) {
-        fileBeans!!.removeAt(position)
+        fileBeans.removeAt(position)
         notifyItemRemoved(position)
     }
 
