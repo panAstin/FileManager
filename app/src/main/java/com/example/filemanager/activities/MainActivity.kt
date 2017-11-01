@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
             window.statusBarColor = Color.TRANSPARENT
             window.navigationBarColor = Color.TRANSPARENT
         //}
-        val toolbar = findViewById(R.id.toolbar) as Toolbar
+        val toolbar:Toolbar = findViewById(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
         filemng()
         val fragmentpageadapter= FragmentPageAdapter(supportFragmentManager)

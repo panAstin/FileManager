@@ -46,7 +46,7 @@ class FileListFragment : Fragment() {
     companion object {
         var selectedFiles: ArrayList<FileBean>? = null
         var Pathnotes = ArrayList<String>()     //存储路径记录
-        @Volatile var isStop = false            //线程中断标识
+        @Volatile var isFinished = true          //正常完成标识
     }
 
     fun newInstance(): FileListFragment {
@@ -90,21 +90,31 @@ class FileListFragment : Fragment() {
                     initprogressdialog("正在搜索...","请稍候...",0)
                     //新建线程
                      val mthread = Thread(Runnable {
-                         while (!isStop){
                              //需要花时间的方法
                              try {
-                                 showSearchresult(query)
+                                 isFinished = true
+                                 var result:ArrayList<FileBean> = ArrayList()
+                                 while(!Thread.currentThread().isInterrupted){
+                                     result= FileSearch(query, currentpath)
+                                     Thread.currentThread().interrupt()
+                                 }
+                                 if(isFinished){
+                                     mFiles = result
+                                     val msg = Message()
+                                     msg.arg1 = 1
+                                     handler.sendMessage(msg)   //传递结果集
+                                     SEARCH_SWITCH = 1
+                                 }
                              } catch(e:Exception) {
                                  e.printStackTrace()
-                                 break
                              } finally {
                                  progressDialog?.dismiss()
                              }
-                         }
                     })
                     progressDialog?.setOnCancelListener({
                         try {
-                            isStop = true
+                            isFinished = false
+                            mthread.interrupt()
                             displaySnackbar("搜索已中断！")
                         } catch (e:Exception){
                             e.printStackTrace()
@@ -213,16 +223,6 @@ class FileListFragment : Fragment() {
                             progressDialog?.dismiss()
                             displaySnackbar("粘贴成功")
                         }
-                    }
-                })
-                progressDialog?.setOnCancelListener({
-                    try {
-                        mthread.interrupt()
-                        displaySnackbar("已中断操作！")
-                    }
-                    catch (e:Exception){
-                        e.printStackTrace()
-                        displaySnackbar("粘贴失败")
                     }
                 })
                 progressDialog?.show()
@@ -426,18 +426,6 @@ class FileListFragment : Fragment() {
                     }
                 }
         return  fileBeans
-    }
-
-    /**
-     * 显示搜索结果
-     *@param keywd 关键字
-     */
-    fun showSearchresult(keywd: String) {
-        mFiles= FileSearch(keywd, currentpath)
-        SEARCH_SWITCH = 1
-        val msg = Message()
-        msg.arg1 = 1
-        handler.sendMessage(msg)   //传递结果集
     }
 
     /**
