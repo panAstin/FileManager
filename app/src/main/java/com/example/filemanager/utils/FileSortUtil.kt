@@ -36,7 +36,7 @@ class FileSortUtil{
                     i++
                 }
             }
-            val type = when(filebean.getIconID()){
+            val type = when(filebean.getTypeID()){
                 2 -> FileType.text
                 3 -> FileType.music
                 4 -> FileType.video
