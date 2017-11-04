@@ -19,7 +19,7 @@ class FileBean(private var file: File) {
     }
     private var date:String = ""
     private var size:String = ""
-    private var iconID:Int = 0
+    private var typeID:Int = 0
     private var icon:Bitmap?  = null
     private var format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")   //时间格式
     private val Icons = arrayOf(R.drawable.dict,R.drawable.file,R.drawable.doc,  R.drawable.music, R.drawable.video, R.drawable.zip, R.drawable.apk)
@@ -41,7 +41,7 @@ class FileBean(private var file: File) {
 
     fun getSize():String = size
 
-    fun getIconID(): Int = iconID
+    fun getTypeID(): Int = typeID
 
     fun getIcon(): Bitmap? = icon
 
@@ -49,7 +49,7 @@ class FileBean(private var file: File) {
 
     private fun initIcon(file: File){
         val type = FileUtil.getMIMEType(file)
-        iconID=when{
+        typeID=when{
             file.isDirectory ->0
             file.isFile -> when {
                 txttypes.contains(type) -> 2
@@ -65,13 +65,13 @@ class FileBean(private var file: File) {
     }
 
     fun initIcon(context: Context){
-            if (iconID<7) {
-                val iconincache = iconCache.getBitmapFromMemory(iconID)
+            if (typeID<7) {
+                val iconincache = iconCache.getBitmapFromMemory(typeID)
                 icon = if(iconincache!=null){
                     iconincache
                 }else{
-                    val iconbitmap = BitmapFactory.decodeResource(context.resources, Icons[iconID])
-                    iconCache.setBitmapToMemory(iconID,iconbitmap)
+                    val iconbitmap = BitmapFactory.decodeResource(context.resources, Icons[typeID])
+                    iconCache.setBitmapToMemory(typeID,iconbitmap)
                     iconbitmap
                 }
         }

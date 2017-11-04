@@ -24,7 +24,6 @@ import com.example.filemanager.adapters.pathAdapter
 import com.example.filemanager.utils.FileUtil
 import com.example.filemanager.utils.MediaUtil
 import java.io.File
-import java.util.*
 import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
 
@@ -44,10 +43,9 @@ class FileListFragment : Fragment() {
     private var pathadapter: pathAdapter? = null
     private var fmadapter: fmAdapter? = null
     private var mactivity: MainActivity? = null
-    private val timer = Timer()
-    private var cacheThreadPool = Executors.newCachedThreadPool()
+    private var cacheThreadPool = Executors.newCachedThreadPool()           //线程迟
     companion object {
-        var selectedFiles: ArrayList<FileBean>? = null
+        var selectedFiles: ArrayList<FileBean>? = null        //被选中的文件
         var Pathnotes = ArrayList<String>()     //存储路径记录
         @Volatile var isFinished = true          //正常完成标识
     }
@@ -350,18 +348,6 @@ class FileListFragment : Fragment() {
         fmadapter = fmAdapter(context)
         mRecyclerView?.adapter = fmadapter           //设置adapter
         showFileDir(ROOT_PATH)
-        val task = object : TimerTask() {    //计时任务
-            override fun run() {
-                val message = Message()
-                if (SEARCH_SWITCH>0){
-                    message.what = 0
-                }else{
-                    message.what = 1
-                }
-                timehandler.sendMessage(message)
-            }
-        }
-        timer.schedule(task,400,1000)  //启动计时器 task任务 delay延迟多久执行 period间隔时间
     }
 
     /**
@@ -395,9 +381,9 @@ class FileListFragment : Fragment() {
         currentpath = path
 
         fmadapter?.setListData(mFiles!!)
-        val message = Message()
-        message.what = 1
-        timehandler.sendMessage(message)
+        Handler().postDelayed( { //消息处理延迟执行
+            fmadapter?.notifyDataSetChanged()
+        },500)
     }
 
     //提示信息
@@ -527,19 +513,6 @@ class FileListFragment : Fragment() {
     }
 
     /**
-     * 计时器Handler
-     */
-    private var timehandler = @SuppressLint("HandlerLeak")
-    object : Handler() {
-        override fun handleMessage(msg: Message) {
-            if (msg.what == 1){
-                //更新列表
-                fmadapter?.notifyDataSetChanged()
-            }
-        }
-    }
-
-    /**
      * 返回键事件
      */
     fun onBack():Boolean{    //返回键
@@ -551,7 +524,6 @@ class FileListFragment : Fragment() {
             showFileDir(file.parent)
             return true
         }
-        timer.cancel()   //停止计时器
         return false
     }
 

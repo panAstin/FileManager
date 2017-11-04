@@ -30,7 +30,6 @@ internal class fmAdapter//参数初始化
     private val animation: Animation
 
     init {
-        //fileBeans = fa
         isSelectd = ArrayMap()
         inflater = LayoutInflater.from(context)
         animation = AnimationUtils.loadAnimation(context, R.anim.list_anim)
