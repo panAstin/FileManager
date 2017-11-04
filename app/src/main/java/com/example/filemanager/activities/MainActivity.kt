@@ -25,7 +25,6 @@ import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.R
 import com.example.filemanager.fragments.FileListFragment
 
-
 class MainActivity : AppCompatActivity() {
     private val REQUEST_CODE = 11
     private var tablayout: TabLayout? = null
@@ -45,10 +44,6 @@ class MainActivity : AppCompatActivity() {
         val toolbar:Toolbar = findViewById(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
         filemng()
-        val fragmentpageadapter= FragmentPageAdapter(supportFragmentManager)
-        viewpager?.adapter =fragmentpageadapter
-        viewpager?.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tablayout))
-        tablayout?.setupWithViewPager(viewpager)
     }
 
     /**
@@ -59,6 +54,10 @@ class MainActivity : AppCompatActivity() {
         viewpager=find(R.id.viewpager)
         tablayout?.tabMode=TabLayout.MODE_FIXED
         tablayout?.tabGravity=TabLayout.GRAVITY_CENTER
+        val fragmentpageadapter= FragmentPageAdapter(supportFragmentManager)
+        viewpager?.adapter =fragmentpageadapter
+        viewpager?.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tablayout))
+        tablayout?.setupWithViewPager(viewpager)
     }
 
     /**

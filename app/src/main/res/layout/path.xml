@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:ellipsize="end"
-        android:maxEms="5"
+        android:maxEms="14"
         android:maxLines="1"
         android:text="" />
 

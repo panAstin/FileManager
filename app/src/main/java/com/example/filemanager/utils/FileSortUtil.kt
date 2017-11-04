@@ -259,7 +259,7 @@ class FileSortUtil{
     /**
      * 异步初始化数据
      */
-    class AsyncSortTask(val handler: Handler) : AsyncTask<Context, Void, Int>() {
+    class AsyncSortTask(private val handler: Handler) : AsyncTask<Context, Void, Int>() {
         override fun doInBackground(vararg params: Context): Int? {//子线程中执行的
             try {
                 FileSortUtil().addAlltype(params.component1().contentResolver)

@@ -24,6 +24,8 @@ import com.example.filemanager.adapters.pathAdapter
 import com.example.filemanager.utils.FileUtil
 import com.example.filemanager.utils.MediaUtil
 import java.io.File
+import java.util.*
+import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
 
 /**
@@ -38,11 +40,12 @@ class FileListFragment : Fragment() {
     private var patharea: RecyclerView? = null
     private var pathtxt:TextView? = null
     private var SEARCH_SWITCH = 0
-    private var RESULT_COUNT: Int = 0
     private var progressDialog: ProgressDialog? = null
     private var pathadapter: pathAdapter? = null
     private var fmadapter: fmAdapter? = null
     private var mactivity: MainActivity? = null
+    private val timer = Timer()
+    private var cacheThreadPool = Executors.newCachedThreadPool()
     companion object {
         var selectedFiles: ArrayList<FileBean>? = null
         var Pathnotes = ArrayList<String>()     //存储路径记录
@@ -85,43 +88,40 @@ class FileListFragment : Fragment() {
                 if (query == "") {
                     displaySnackbar("请输入关键字")
                 } else {
-                    RESULT_COUNT = 0
                     //显示ProgressDialog
                     initprogressdialog("正在搜索...","请稍候...",0)
                     //新建线程
-                     val mthread = Thread(Runnable {
-                             //需要花时间的方法
-                             try {
-                                 isFinished = true
-                                 var result:ArrayList<FileBean> = ArrayList()
-                                 while(!Thread.currentThread().isInterrupted){
-                                     result= FileSearch(query, currentpath)
-                                     Thread.currentThread().interrupt()
-                                 }
-                                 if(isFinished){
-                                     mFiles = result
-                                     val msg = Message()
-                                     msg.arg1 = 1
-                                     handler.sendMessage(msg)   //传递结果集
-                                     SEARCH_SWITCH = 1
-                                 }
-                             } catch(e:Exception) {
-                                 e.printStackTrace()
-                             } finally {
-                                 progressDialog?.dismiss()
+                    cacheThreadPool.execute{
+                         //需要花时间的方法
+                         try {
+                             isFinished = true
+                             var result:ArrayList<FileBean> = ArrayList()
+                             while(!Thread.currentThread().isInterrupted){
+                                 result= FileSearch(query, currentpath)
+                                 Thread.currentThread().interrupt()
                              }
-                    })
+                             if(isFinished){
+                                 mFiles = result
+                                 val msg = Message()
+                                 msg.arg1 = 1
+                                 handler.sendMessage(msg)   //传递结果集
+                                 SEARCH_SWITCH = 1
+                             }
+                         } catch(e:Exception) {
+                             e.printStackTrace()
+                         } finally {
+                             progressDialog?.dismiss()
+                         }
+                     }
                     progressDialog?.setOnCancelListener({
                         try {
                             isFinished = false
-                            mthread.interrupt()
                             displaySnackbar("搜索已中断！")
                         } catch (e:Exception){
                             e.printStackTrace()
                         }
                     })
                     progressDialog?.show()
-                    mthread.start()
                 }
                 return false
             }
@@ -282,7 +282,7 @@ class FileListFragment : Fragment() {
     /**
      * 文件列表初始化
      */
-    private fun initfilelist(view:View){
+    private fun initfilelist(view:View) {
         mFiles = ArrayList()
         Pathnotes.clear()
         patharea = view.findViewById(R.id.patharea) as RecyclerView
@@ -293,15 +293,15 @@ class FileListFragment : Fragment() {
         patharea!!.layoutManager = llmanager       //设置布局管理器
         patharea!!.itemAnimator = DefaultItemAnimator()               //设置Item增加、移除动画
         //设置点击监听
-        patharea!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(patharea){
+        patharea!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(patharea) {
             override fun onItemLongClick(viewHolder: RecyclerView.ViewHolder?) {
             }
 
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder?) {
-                var i=1
+                var i = 1
                 var topath = ROOT_PATH
                 //点击的根据路径项得到跳转路径
-                while(i <= viewHolder!!.adapterPosition ){
+                while (i <= viewHolder!!.adapterPosition) {
                     topath += "/" + Pathnotes[i]
                     i++
                 }
@@ -311,37 +311,38 @@ class FileListFragment : Fragment() {
                 showFileDir(topath)
             }
 
-        } )
-        pathadapter= pathAdapter(context)
-        patharea!!.adapter= pathadapter
+        })
+        pathadapter = pathAdapter(context)
+        patharea!!.adapter = pathadapter
         mRecyclerView!!.layoutManager = LinearLayoutManager(view.context)          //设置布局管理器
         mRecyclerView!!.itemAnimator = DefaultItemAnimator()               //设置Item增加、移除动画
         //设置点击与长按监听器
         mRecyclerView!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(mRecyclerView) {
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder) {        //点击
-                if(selectFlag >0){           //选择模式下，点击选择文件项
-                    fmAdapter.isSelectd!![viewHolder.adapterPosition] = when(fmAdapter.isSelectd!![viewHolder.adapterPosition] ){
+                if (selectFlag > 0) {           //选择模式下，点击选择文件项
+                    fmAdapter.isSelectd!![viewHolder.adapterPosition] = when (fmAdapter.isSelectd!![viewHolder.adapterPosition]) {
                         true -> false
                         else -> true
                     }
                     fmadapter!!.notifyDataSetChanged()
                     mactivity?.invalidateOptionsMenu()
-                }else{
-                    val path =mFiles!![viewHolder.adapterPosition].getFile().path
+                } else {
+                    val path = mFiles!![viewHolder.adapterPosition].getFile().path
                     val file = File(path)
                     if (file.exists() && file.canRead()) {            // 文件存在并可读
                         if (file.isDirectory) {
                             showFileDir(path)                      //显示子目录及文件
                         } else {
-                            FileUtil.openFile(context,file)               //打开文件
+                            FileUtil.openFile(context, file)               //打开文件
                         }
                     } else {   //没有权限
                         AlertDialog.Builder(mactivity).setTitle("信息")     //弹出窗口
                                 .setMessage("没有权限!")
-                                .setPositiveButton("确定") {  _,  _ -> displaySnackbar("没有权限") }.show()
+                                .setPositiveButton("确定") { _, _ -> displaySnackbar("没有权限") }.show()
                     }
                 }
             }
+
             override fun onItemLongClick(viewHolder: RecyclerView.ViewHolder) {            //长按
                 changeSelecFlag(viewHolder.adapterPosition)    //进入选择模式
             }
@@ -349,6 +350,18 @@ class FileListFragment : Fragment() {
         fmadapter = fmAdapter(context)
         mRecyclerView?.adapter = fmadapter           //设置adapter
         showFileDir(ROOT_PATH)
+        val task = object : TimerTask() {    //计时任务
+            override fun run() {
+                val message = Message()
+                if (SEARCH_SWITCH>0){
+                    message.what = 0
+                }else{
+                    message.what = 1
+                }
+                timehandler.sendMessage(message)
+            }
+        }
+        timer.schedule(task,400,1000)  //启动计时器 task任务 delay延迟多久执行 period间隔时间
     }
 
     /**
@@ -362,6 +375,7 @@ class FileListFragment : Fragment() {
         val files = file.listFiles()
         val strpath = path.substring(path.indexOf("0"),path.length)
         Pathnotes = strpath.split("/") as ArrayList<String>  //分割路径
+        pathadapter?.notifyDataSetChanged()          //更新路径
         files
                 .filterNot {
                     it.isHidden      //筛选隐藏文件
@@ -369,12 +383,21 @@ class FileListFragment : Fragment() {
                 .forEach {
                     val fb  = FileBean(it)
                     fb.initIcon(context)
+                    cacheThreadPool.execute{
+                        try {
+                            fb.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
+                        }catch (e:Exception){
+                            e.stackTrace
+                        }
+                    }
                     mFiles!!.add(fb) }
         SEARCH_SWITCH = 0
         currentpath = path
 
-        pathadapter?.notifyDataSetChanged()
         fmadapter?.setListData(mFiles!!)
+        val message = Message()
+        message.what = 1
+        timehandler.sendMessage(message)
     }
 
     //提示信息
@@ -421,8 +444,14 @@ class FileListFragment : Fragment() {
                     if (key in it.name) {
                         val fb = FileBean(it)
                         fb.initIcon(context)
+                        cacheThreadPool.execute {
+                            try {
+                                fb.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
+                            } catch (e: Exception) {
+                                e.stackTrace
+                            }
+                        }
                         fileBeans.add(fb)
-                        RESULT_COUNT++
                     }
                 }
         return  fileBeans
@@ -492,7 +521,20 @@ class FileListFragment : Fragment() {
             if (fmadapter!!.itemCount == 0) {
                 pathtxt!!.text = "无对应文件"
             } else {
-                pathtxt!!.text=String.format(resources.getString(R.string.result_cout),RESULT_COUNT)
+                pathtxt!!.text=String.format(resources.getString(R.string.result_cout),mFiles?.size)
+            }
+        }
+    }
+
+    /**
+     * 计时器Handler
+     */
+    private var timehandler = @SuppressLint("HandlerLeak")
+    object : Handler() {
+        override fun handleMessage(msg: Message) {
+            if (msg.what == 1){
+                //更新列表
+                fmadapter?.notifyDataSetChanged()
             }
         }
     }
@@ -509,6 +551,7 @@ class FileListFragment : Fragment() {
             showFileDir(file.parent)
             return true
         }
+        timer.cancel()   //停止计时器
         return false
     }
 

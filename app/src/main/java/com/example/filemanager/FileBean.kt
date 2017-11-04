@@ -4,16 +4,19 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.example.filemanager.utils.FileUtil
+import com.example.filemanager.utils.MemoryCacheUtils
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * Created by 11046 on 2017/9/27.
  * 封装文件与文件大小、文件图标
  */
 class FileBean(private var file: File) {
+    companion object {
+        private var iconCache = MemoryCacheUtils()
+    }
     private var date:String = ""
     private var size:String = ""
     private var iconID:Int = 0
@@ -63,13 +66,20 @@ class FileBean(private var file: File) {
 
     fun initIcon(context: Context){
             if (iconID<7) {
-                icon = BitmapFactory.decodeResource(context.resources, Icons[iconID])
+                val iconincache = iconCache.getBitmapFromMemory(iconID)
+                icon = if(iconincache!=null){
+                    iconincache
+                }else{
+                    val iconbitmap = BitmapFactory.decodeResource(context.resources, Icons[iconID])
+                    iconCache.setBitmapToMemory(iconID,iconbitmap)
+                    iconbitmap
+                }
         }
     }
 
     init {
         this.date = format.format(Date(file.lastModified()))
-        this.size = FileUtil.getAutoFileOrFilesSize(file.path)
+        this.size = "计算中.."
         initIcon(file)
     }
 

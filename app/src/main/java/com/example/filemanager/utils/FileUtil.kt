@@ -10,6 +10,7 @@ import android.util.Log
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.nio.channels.Channel
 import java.text.DecimalFormat
 
 object FileUtil {
@@ -44,7 +45,9 @@ object FileUtil {
         var size: Long = 0
         if (file.exists()) {
             val fis = FileInputStream(file)
-            size = fis.available().toLong()
+            val fc = fis.channel
+            size = fc.size()
+            fc.close()
             fis.close()
         } else {
             file.createNewFile()
