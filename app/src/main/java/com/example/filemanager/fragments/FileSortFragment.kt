@@ -25,7 +25,7 @@ import android.content.IntentFilter
  * 文件分类
  */
 class FileSortFragment:Fragment() {
-    private var mRecyclerView: RecyclerView? = null
+    private var sRecyclerView: RecyclerView? = null
     private var fsadapter: fsAdapter? = null
     private var myreceiver:myReceiver?=null
 
@@ -54,10 +54,10 @@ class FileSortFragment:Fragment() {
      * 初始化分类页面
      */
     private fun initsorts(view: View){
-        mRecyclerView = view.findViewById(R.id.recycleview) as RecyclerView
-        mRecyclerView!!.layoutManager = GridLayoutManager(view.context,2)          //设置布局管理器
-        mRecyclerView!!.itemAnimator = DefaultItemAnimator()               //设置Item增加、移除动画
-        mRecyclerView!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(mRecyclerView) {
+        sRecyclerView = view.findViewById(R.id.recycleview) as RecyclerView
+        sRecyclerView!!.layoutManager = GridLayoutManager(view.context,2)          //设置布局管理器
+        sRecyclerView!!.itemAnimator = DefaultItemAnimator()               //设置Item增加、移除动画
+        sRecyclerView!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(sRecyclerView) {
             override fun onItemLongClick(viewHolder: RecyclerView.ViewHolder?) {
                 TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
             }
@@ -73,7 +73,7 @@ class FileSortFragment:Fragment() {
                 }
             })
         fsadapter= fsAdapter(context)
-        mRecyclerView!!.adapter=fsadapter  //设置adapter
+        sRecyclerView!!.adapter=fsadapter  //设置adapter
     }
 
     /**

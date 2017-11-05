@@ -98,7 +98,7 @@ class FileListFragment : Fragment() {
                                  result= FileSearch(query, currentpath)
                                  Thread.currentThread().interrupt()
                              }
-                             if(isFinished){
+                             if(isFinished){  //正常结束
                                  mFiles = result
                                  val msg = Message()
                                  msg.arg1 = 1

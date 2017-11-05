@@ -47,7 +47,7 @@ class FileBean(private var file: File) {
 
     fun getFile():File = file
 
-    private fun initIcon(file: File){
+    private fun initType(file: File){
         val type = FileUtil.getMIMEType(file)
         typeID=when{
             file.isDirectory ->0
@@ -80,7 +80,7 @@ class FileBean(private var file: File) {
     init {
         this.date = format.format(Date(file.lastModified()))
         this.size = "计算中.."
-        initIcon(file)
+        initType(file)
     }
 
 }

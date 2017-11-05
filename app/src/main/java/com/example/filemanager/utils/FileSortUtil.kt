@@ -21,16 +21,16 @@ import java.io.File
 class FileSortUtil{
     private var mContentResolver: ContentResolver? = null
     companion object {
-        val mAllFilePaths = ArrayMap<FileType,ArrayList<FileBean>>()
+        val mAllFiles = ArrayMap<FileType,ArrayList<FileBean>>()
 
         //删除
         fun deleteFile(file:File){
             val filebean = FileBean(file)
             if (file.parent == Environment.getExternalStorageDirectory().path+"/Download" ){
                 var i=0
-                while(i<mAllFilePaths[FileType.download]!!.size) {
-                    if(filebean.getFile() == mAllFilePaths[FileType.download]!![i].getFile()){
-                        mAllFilePaths[FileType.download]!!.removeAt(i)
+                while(i<mAllFiles[FileType.download]!!.size) {
+                    if(filebean.getFile() == mAllFiles[FileType.download]!![i].getFile()){
+                        mAllFiles[FileType.download]!!.removeAt(i)
                         break
                     }
                     i++
@@ -47,9 +47,9 @@ class FileSortUtil{
             }
             if (type != null){
                 var i=0
-                while(i<mAllFilePaths[type]!!.size) {
-                    if(filebean.getFile() == mAllFilePaths[type]!![i].getFile()){
-                        mAllFilePaths[type]!!.removeAt(i)
+                while(i<mAllFiles[type]!!.size) {
+                    if(filebean.getFile() == mAllFiles[type]!![i].getFile()){
+                        mAllFiles[type]!!.removeAt(i)
                         break
                     }
                     i++
@@ -67,11 +67,11 @@ class FileSortUtil{
         if (type == null || fileBean == null) {
             return
         }
-        var fileBeans = mAllFilePaths[type]
+        var fileBeans = mAllFiles[type]
 
         if (fileBeans == null) {
             fileBeans = ArrayList()
-            mAllFilePaths.put(type, fileBeans)
+            mAllFiles.put(type, fileBeans)
         }
         fileBeans.add(fileBean)
     }
@@ -81,15 +81,15 @@ class FileSortUtil{
      * @param type 文件类型
      * @param fileBean 文件集合
      */
-     private fun addFilePathsByType(type: FileType?, fileBean: ArrayList<FileBean>?) {
+     private fun addFilesByType(type: FileType?, fileBean: ArrayList<FileBean>?) {
         if (type == null || fileBean == null) {
             return
         }
-        var fileBeans = mAllFilePaths[type]
+        var fileBeans = mAllFiles[type]
 
         if (fileBeans == null) {
             fileBeans = ArrayList()
-            mAllFilePaths.put(type, fileBeans)
+            mAllFiles.put(type, fileBeans)
         }
          fileBeans.addAll(fileBean)
     }
@@ -99,23 +99,23 @@ class FileSortUtil{
      * @param fileType 文件类型
      * @return 文件集合
      */
-    fun getFilePathsByType(fileType: FileType?): ArrayList<FileBean>? {
+    fun getFilesByType(fileType: FileType?): ArrayList<FileBean>? {
         return if (fileType == null) {
             null
-        } else mAllFilePaths[fileType]
+        } else mAllFiles[fileType]
 
     }
 
     /**
      * 获取某类文件计数
      */
-    fun getTypeCount(fileType: FileType)= mAllFilePaths[fileType]?.size ?: 0
+    fun getTypeCount(fileType: FileType)= mAllFiles[fileType]?.size ?: 0
 
     /**
      * 销毁分类集合
      */
     fun destory() {
-        mAllFilePaths.clear()
+        mAllFiles.clear()
     }
 
     /**
@@ -286,13 +286,13 @@ class FileSortUtil{
     //初始化全部分类文件
     fun addAlltype(contentResolver: ContentResolver){
         mContentResolver=contentResolver
-        addFilePathsByType(FileType.text,allText)
-        addFilePathsByType(FileType.download,allDownload)
-        addFilePathsByType(FileType.music,allMusic)
-        addFilePathsByType(FileType.photo,allPhoto)
-        addFilePathsByType(FileType.video,allVideo)
-        addFilePathsByType(FileType.zip,allZip)
-        addFilePathsByType(FileType.apk,allApk)
+        addFilesByType(FileType.text,allText)
+        addFilesByType(FileType.download,allDownload)
+        addFilesByType(FileType.music,allMusic)
+        addFilesByType(FileType.photo,allPhoto)
+        addFilesByType(FileType.video,allVideo)
+        addFilesByType(FileType.zip,allZip)
+        addFilesByType(FileType.apk,allApk)
     }
 
 }

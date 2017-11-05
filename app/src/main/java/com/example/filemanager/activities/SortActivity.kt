@@ -83,7 +83,7 @@ class SortActivity : AppCompatActivity() {
 
     private fun showFiles(sort:Int){
         sFiles = ArrayList()
-        val fileBeans = FileSortUtil().getFilePathsByType(FileType.getFileTypeByOrdinal(sort))
+        val fileBeans = FileSortUtil().getFilesByType(FileType.getFileTypeByOrdinal(sort))
         if(fileBeans != null){
           for (fb in fileBeans){
               fb.initIcon(applicationContext)

@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
         //}
         val toolbar:Toolbar = findViewById(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
-        filemng()
+        checkPermissions()
     }
 
     /**
@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * 检查权限
      */
-    private fun filemng() {
+    private fun checkPermissions() {
         //检查权限
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             //进入到这里代表没有权限.
