@@ -21,6 +21,7 @@ import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.utils.FileUtil
 import org.jetbrains.anko.setContentView
 import java.io.File
+import java.util.concurrent.Executors
 
 
 class SortActivity : AppCompatActivity() {
@@ -29,6 +30,7 @@ class SortActivity : AppCompatActivity() {
     private var fmadapter: fmAdapter? = null
     private val Sortstxt = arrayOf("文档","下载","音乐","图片","视频","压缩包","安装包")
     private var sort = -1
+    private var cacheThreadPool = Executors.newCachedThreadPool()           //线程迟
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,12 +83,23 @@ class SortActivity : AppCompatActivity() {
         showFiles(sort)
     }
 
+    /**
+     * 显示文件列表
+     * @param sort 文件类型
+     */
     private fun showFiles(sort:Int){
         sFiles = ArrayList()
         val fileBeans = FileSortUtil().getFilesByType(FileType.getFileTypeByOrdinal(sort))
         if(fileBeans != null){
           for (fb in fileBeans){
               fb.initIcon(applicationContext)
+              cacheThreadPool.execute{
+                  try {
+                      fb.setSize(FileUtil.getAutoFileOrFilesSize(fb.getFile().path))
+                  }catch (e:Exception){
+                      e.stackTrace
+                  }
+              }
               sFiles!!.add(fb)
           }
         }
