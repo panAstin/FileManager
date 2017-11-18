@@ -9,6 +9,7 @@ import org.jetbrains.anko.recyclerview.v7.recyclerView
 
 /**
  * Created by 11046 on 2017/9/22.
+ * SortActivity布局
  */
 class SortActivityUI:AnkoComponent<SortActivity>{
     override fun createView(ui: AnkoContext<SortActivity>)= with(ui) {
