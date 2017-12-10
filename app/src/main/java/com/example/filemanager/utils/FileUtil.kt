@@ -6,12 +6,12 @@ import android.net.Uri
 import android.os.Build
 import android.support.v4.content.FileProvider
 import android.util.Log
+import com.example.filemanager.FileBean
+import java.io.*
 
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.nio.channels.Channel
 import java.text.DecimalFormat
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 object FileUtil {
     /**
@@ -286,4 +286,109 @@ object FileUtil {
         }
     }
 
+    /**
+     * 文件搜索
+     *@param key 关键字
+     * @param path 路径
+     * @return 搜索结果
+     */
+     fun FileSearch(key: String, path: String):ArrayList<FileBean> {
+        val fileBeans = ArrayList<FileBean>()
+        val file = File(path)
+        val files = file.listFiles()
+        files
+                .filterNot {
+                    it.isHidden      //筛选隐藏文件
+                }
+                .forEach {
+                    if (it.isDirectory) {
+                        fileBeans.addAll(FileSearch(key, it.path))
+                    }
+                    if (key in it.name) {
+                        val fb = FileBean(it)
+                        fileBeans.add(fb)
+                    }
+                }
+        return  fileBeans
+    }
+
+    /**
+     * 文件压缩
+     * @param fs 文件列表
+     * @param zipFilePath 压缩包路径
+     * @return 是否成功
+     */
+    fun zipFiles(fs:ArrayList<File>?,zipFilePath:String):Boolean{
+        if(fs==null){
+            throw NullPointerException("未选中文件!")
+        }
+        var result = false
+        var zos:ZipOutputStream? = null
+        try {
+            zos = ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFilePath)))
+            for(file in fs){
+                if (!file.exists()){
+                    continue
+                }
+                if (file.isDirectory){
+                    recursionZip(zos,file,file.name+File.separator)
+                }else{
+                    recursionZip(zos,file,"")
+                }
+            }
+            result = true
+            zos.flush()
+        }catch (e:Exception){
+            e.printStackTrace()
+            Log.e("Zip file failed err",e.message)
+        }finally {
+            try {
+                if(zos!=null){
+                    zos.closeEntry()
+                    zos.close()
+                }
+            }catch (e:IOException){
+                e.printStackTrace()
+            }
+        }
+        return  result
+    }
+
+    /**
+     * 递归压缩
+     * @param zos 压缩输出流
+     * @param file 待压缩文件
+     * @param baseDir 基本路径
+     */
+    fun recursionZip(zos:ZipOutputStream,file:File,baseDir:String) {
+        var bDir = baseDir
+        if (file.isDirectory) {
+            Log.i("zip tag","the file is dir name -->>" + file.name + " the baseDir-->>>" + bDir)
+            val files = file.listFiles()
+            for(f in files){
+                if(f==null){
+                    continue
+                }
+                if(f.isDirectory){
+                    bDir = file.name + File.separator + f.name + File.separator
+                    Log.i("zip tag","bdir111 -->>" + bDir)
+                    recursionZip(zos,f,bDir)
+                }else{
+                    Log.i("zip tag","bdir222 -->>" + bDir)
+                    recursionZip(zos,f,bDir)
+                }
+            }
+        }else{
+            Log.i("zip tag","the file name is  -->>" + file.name + " the base dir-->>" + bDir)
+            val buf = ByteArray(2048)
+            val input = BufferedInputStream(FileInputStream(file))
+            zos.putNextEntry(ZipEntry(bDir + file.name))
+            var len = input.read(buf)
+            while (len!=-1){
+                zos.write(buf,0,len)
+                len=input.read(buf)
+            }
+            input.close()
+        }
+    }
 }

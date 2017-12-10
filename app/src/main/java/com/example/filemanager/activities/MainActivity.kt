@@ -5,7 +5,6 @@ import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.*
-import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -21,14 +20,30 @@ import com.example.filemanager.adapters.FragmentPageAdapter
 import UI.MainActivityUI
 import android.content.*
 import android.support.v4.app.Fragment
+import android.support.v4.widget.DrawerLayout
+import android.support.v7.app.ActionBarDrawerToggle
+import android.widget.AdapterView
+import android.widget.LinearLayout
+import android.widget.ListView
+import android.widget.SimpleAdapter
 import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.R
 import com.example.filemanager.fragments.FileListFragment
+import com.example.filemanager.fragments.ServerFragment
+import com.example.filemanager.utils.SnackbarUtil
+import java.util.*
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
     private val REQUEST_CODE = 11
     private var tablayout: TabLayout? = null
     private var viewpager: ViewPager? = null
+    private var mDrawerLayout:DrawerLayout? = null
+    private var mDrawerToggle:ActionBarDrawerToggle? = null
+    private var toolbar:Toolbar? = null
+    private var dl_list:ListView? = null
+    private val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.INTERNET)
+    private var mPermissionList = ArrayList<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,46 +56,91 @@ class MainActivity : AppCompatActivity() {
             window.statusBarColor = Color.TRANSPARENT
             window.navigationBarColor = Color.TRANSPARENT
         //}
-        val toolbar:Toolbar = findViewById(R.id.toolbar) as Toolbar
-        setSupportActionBar(toolbar)
+
         checkPermissions()
+
     }
 
     /**
      * 控件初始化
      */
     private fun initview(){
-        tablayout=find(R.id.tablayout)
-        viewpager=find(R.id.viewpager)
+        toolbar = find(R.id.toolbar)
+        mDrawerLayout = find(R.id.dl_left)
+        tablayout = find(R.id.tablayout)
+        viewpager = find(R.id.viewpager)
+        dl_list = find(R.id.drawermenu)
+
+        setSupportActionBar(toolbar)
+        mDrawerToggle = ActionBarDrawerToggle(this,mDrawerLayout,toolbar,R.string.open,R.string.close)
+        mDrawerToggle?.syncState()
+        mDrawerLayout?.addDrawerListener(mDrawerToggle!!)
         tablayout?.tabMode=TabLayout.MODE_FIXED
         tablayout?.tabGravity=TabLayout.GRAVITY_CENTER
         val fragmentpageadapter= FragmentPageAdapter(supportFragmentManager)
         viewpager?.adapter =fragmentpageadapter
         viewpager?.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tablayout))
         tablayout?.setupWithViewPager(viewpager)
+        binddata()
+        dl_list?.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+            //侧滑菜单点击监听
+            selectItem(position)
+        }
+        supportFragmentManager.beginTransaction().add(R.id.fragmentcontent,ServerFragment().newInstnace()).commit()
     }
 
+    /**
+     * 侧滑菜单绑定数据
+     */
+    private fun binddata(){
+        val texts = arrayOf("文件管理","远程管理","退出")
+        val icons = arrayOf(R.drawable.fmbtn,R.drawable.lkbtn,R.drawable.shutdown)
+        val data:ArrayList<Map<String,Any>> = ArrayList()
+        for (index in texts.indices){
+            val item = HashMap<String,Any>()
+            item.put("txt",texts[index])
+            item.put("icon",icons[index])
+            data.add(item)
+        }
+        val simplead = SimpleAdapter(this,data,R.layout.dl_menu, arrayOf("txt","icon"),
+                intArrayOf(R.id.menu_tv,R.id.menu_img))
+        dl_list?.adapter = simplead
+    }
+
+    /**
+     * 侧滑菜单项点击
+     */
+    private fun selectItem(position: Int){
+        when (position){
+            0 -> {
+                tablayout?.visibility = View.VISIBLE
+                viewpager?.visibility = View.VISIBLE
+                mDrawerLayout?.closeDrawers()            }
+            1 ->{
+                tablayout?.visibility = View.GONE
+                viewpager?.visibility = View.GONE
+                mDrawerLayout?.closeDrawers()
+            }
+            2 ->{
+                quit(this)
+            }
+        }
+    }
     /**
      * 检查权限
      */
     private fun checkPermissions() {
         //检查权限
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            //进入到这里代表没有权限.
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                //已经禁止提示了
-                displaySnackbar("您已禁止该权限，需要重新开启。")
-            } else {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CODE)
-            }
-        } else {
+        permissions
+                .filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+                .forEach { mPermissionList.add(it) }
+        if (mPermissionList.isEmpty()) {
             initview()
+        } else {
+            //进入到这里代表没有权限.
+            val mpermissions = mPermissionList.toArray()
+            ActivityCompat.requestPermissions(this, mpermissions as Array<out String>, REQUEST_CODE)
         }
-    }
-
-    //消息
-    private fun displaySnackbar(message: String) {
-        Snackbar.make(window.decorView,message,Snackbar.LENGTH_SHORT).show()
     }
 
     /**
@@ -93,7 +153,7 @@ class MainActivity : AppCompatActivity() {
                 refresh()
             } else {
                 //用户拒绝授权
-                displaySnackbar("已拒绝授权")
+                SnackbarUtil.short(window.decorView,"已拒绝授权")
             }
         }
     }
@@ -112,23 +172,32 @@ class MainActivity : AppCompatActivity() {
         return fragments.firstOrNull { it != null && it.isVisible }
     }
 
-    //退出确认
+    /**
+     * 退出确认
+     */
+    private fun quit(context: Context){
+        AlertDialog.Builder(context)
+                .setTitle("退出")
+                .setMessage("您确定要退出吗？")
+                .setPositiveButton("退出") { _, _ ->
+                    // TODO Auto-generated method stub
+                    FileSortUtil().destory()
+                    this.finish()
+                }.setNegativeButton("取消") { _, _ ->
+            // TODO Auto-generated method stub
+        }.show()
+    }
+
+    /**
+     * 返回键监听
+     */
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.repeatCount == 0) {
             if(getVisibleFragment() is FileListFragment){
                 if((getVisibleFragment() as FileListFragment).onBack()){
                     return true
                 } else {
-                    AlertDialog.Builder(this@MainActivity)
-                            .setTitle("退出")
-                            .setMessage("您确定要退出吗？")
-                            .setPositiveButton("退出") { _, _ ->
-                                // TODO Auto-generated method stub
-                                FileSortUtil().destory()
-                                this.finish()
-                            }.setNegativeButton("取消") { _, _ ->
-                        // TODO Auto-generated method stub
-                    }.show()
+                   quit(this)
                 }
             }
             return true

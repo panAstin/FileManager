@@ -14,9 +14,6 @@ import java.util.*
  * 封装文件与文件大小、文件图标
  */
 class FileBean(private var file: File) {
-    companion object {
-        private var iconCache = MemoryCacheUtils()
-    }
     private var date:String = ""
     private var size:String = ""
     private var typeID:Int = 0
@@ -64,14 +61,14 @@ class FileBean(private var file: File) {
         }
     }
 
-    fun initIcon(context: Context){
+    fun initIcon(context: Context,iconCacheUtils: MemoryCacheUtils){
             if (typeID<7) {
-                val iconincache = iconCache.getBitmapFromMemory(typeID)
+                val iconincache = iconCacheUtils.getBitmapFromMemory(typeID)
                 icon = if(iconincache!=null){
                     iconincache
                 }else{
                     val iconbitmap = BitmapFactory.decodeResource(context.resources, Icons[typeID])
-                    iconCache.setBitmapToMemory(typeID,iconbitmap)
+                    iconCacheUtils.setBitmapToMemory(typeID,iconbitmap)
                     iconbitmap
                 }
         }

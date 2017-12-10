@@ -6,7 +6,6 @@ import android.app.ProgressDialog
 import android.content.Context
 import android.content.DialogInterface
 import android.os.*
-import android.support.design.widget.Snackbar
 import android.support.v4.app.Fragment
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
@@ -23,6 +22,8 @@ import com.example.filemanager.adapters.fmAdapter.Companion.selectFlag
 import com.example.filemanager.adapters.pathAdapter
 import com.example.filemanager.utils.FileUtil
 import com.example.filemanager.utils.MediaUtil
+import com.example.filemanager.utils.MemoryCacheUtils
+import com.example.filemanager.utils.SnackbarUtil
 import java.io.File
 import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
@@ -43,7 +44,9 @@ class FileListFragment : Fragment() {
     private var pathadapter: pathAdapter? = null
     private var fmadapter: fmAdapter? = null
     private var mactivity: MainActivity? = null
-    private var cacheThreadPool = Executors.newCachedThreadPool()           //线程迟
+    private var cacheThreadPool = Executors.newCachedThreadPool()           //线程池
+    private var iconCache = MemoryCacheUtils()             //图片缓存
+
     companion object {
         var selectedFiles: ArrayList<FileBean>? = null        //被选中的文件
         var Pathnotes = ArrayList<String>()     //存储路径记录
@@ -368,7 +371,7 @@ class FileListFragment : Fragment() {
                 }
                 .forEach {
                     val fb  = FileBean(it)
-                    fb.initIcon(context)
+                    fb.initIcon(context,iconCache)
                     cacheThreadPool.execute{
                         try {
                             fb.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
@@ -388,7 +391,7 @@ class FileListFragment : Fragment() {
 
     //提示信息
     private fun displaySnackbar(message: String) {
-        Snackbar.make(activity.window.decorView,message, Snackbar.LENGTH_SHORT).show()
+        SnackbarUtil.short(activity.window.decorView,message)
     }
 
     /**
@@ -429,7 +432,7 @@ class FileListFragment : Fragment() {
                     }
                     if (key in it.name) {
                         val fb = FileBean(it)
-                        fb.initIcon(context)
+                        fb.initIcon(context,iconCache)
                         cacheThreadPool.execute {
                             try {
                                 fb.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
