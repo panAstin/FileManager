@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="10dp">
+
+    <TextView
+        android:id="@+id/item1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/set1"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
+
+    <Spinner
+        android:id="@+id/modespinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/item1"
+        android:layout_toEndOf="@+id/item1"
+        android:entries="@array/modes" />
+    <TextView
+        android:id="@+id/item2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_below="@+id/item1"
+        android:text="@string/set2"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
+
+    <Switch
+        android:id="@+id/synswitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/item2"
+        android:layout_alignParentEnd="true"
+        android:layout_toEndOf="@+id/item2" />
+
+    <TextView
+        android:id="@+id/item0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/set0"
+        android:layout_marginTop="5dp"
+        android:layout_below="@+id/item2"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
+
+    <EditText
+        android:id="@+id/porttxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="number"
+        android:singleLine="true"
+        android:textSize="14sp"
+        android:layout_marginStart="80dp"
+        android:layout_alignBaseline="@+id/item0"
+        android:layout_toEndOf="@+id/item0"
+        android:layout_alignParentEnd="true"/>
+</RelativeLayout>

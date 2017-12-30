@@ -174,7 +174,7 @@ object FileUtil {
      * 获取文件MIMETYPE
      * @param file 文件
      */
-    internal fun getMIMEType(file: File): String {
+     fun getMIMEType(file: File): String {
         var type = "*/*"
         val name = file.name
         var end=""
@@ -199,6 +199,9 @@ object FileUtil {
      * @param toPath 目标路径
      */
     internal fun copy(fromPath: String, toPath: String) {
+        if (fromPath==toPath){
+            return
+        }
         val sfile = File(fromPath)
         if (sfile.isDirectory) {
             copyFolder(fromPath, toPath)

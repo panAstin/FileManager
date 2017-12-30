@@ -23,7 +23,6 @@ import android.support.v4.app.Fragment
 import android.support.v4.widget.DrawerLayout
 import android.support.v7.app.ActionBarDrawerToggle
 import android.widget.AdapterView
-import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.SimpleAdapter
 import com.example.filemanager.utils.FileSortUtil
@@ -86,7 +85,6 @@ class MainActivity : AppCompatActivity() {
             //侧滑菜单点击监听
             selectItem(position)
         }
-        supportFragmentManager.beginTransaction().add(R.id.fragmentcontent,ServerFragment().newInstnace()).commit()
     }
 
     /**
@@ -113,10 +111,16 @@ class MainActivity : AppCompatActivity() {
     private fun selectItem(position: Int){
         when (position){
             0 -> {
+                if(getVisibleFragment() is ServerFragment){
+                    supportFragmentManager.beginTransaction().remove(getVisibleFragment()).commit()
+                }
                 tablayout?.visibility = View.VISIBLE
                 viewpager?.visibility = View.VISIBLE
                 mDrawerLayout?.closeDrawers()            }
             1 ->{
+                if(getVisibleFragment() is FileListFragment){
+                    supportFragmentManager.beginTransaction().add(R.id.fragmentcontent,ServerFragment().newInstnace()).commit()
+                }
                 tablayout?.visibility = View.GONE
                 viewpager?.visibility = View.GONE
                 mDrawerLayout?.closeDrawers()

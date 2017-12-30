@@ -12,5 +12,8 @@
     <string name="stopserver">停止服务器</string>
     <string name="noserver">服务器未启动</string>
     <string name="starting">服务器启动中</string>
-    <string name="httpadd">http://%1$s:9090</string>
+    <string name="httpadd">http://%1$s:%2$d</string>
+    <string name="set0">端 口 号：</string>
+    <string name="set1">文件存储路径：</string>
+    <string name="set2">自 动 同 步：</string>
 </resources>

@@ -11,6 +11,7 @@ import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.ArrayMap
+import android.util.Log
 import android.view.*
 import android.widget.EditText
 import android.widget.SearchView

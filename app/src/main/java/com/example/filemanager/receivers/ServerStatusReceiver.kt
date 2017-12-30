@@ -11,65 +11,31 @@ import com.example.filemanager.fragments.ServerFragment
  * Created by 11046 on 2017/11/28.
  * 服务器状态广播接收器
  */
-class ServerStatusReceiver(serverFragment: ServerFragment) : BroadcastReceiver() {
+class ServerStatusReceiver(serverFragment: ServerFragment,mainActivity: MainActivity) : BroadcastReceiver() {
     companion object {
         val ACTION = "com.example.filemanager.receiver"
         val STATUS_KEY = "STATUS_KEY"
         val STATUS_VALUE_START = 1
         val STATUS_VALUE_STARTED = 2
         val STATUS_VALUE_STOP = 3
-
-        /**
-         * 通知 服务器启动
-         */
-        fun serverStart(context: Context?){
-            sendBroadcast(context, STATUS_VALUE_START)
-        }
-
-        /**
-         *通知 服务器已启动
-         */
-        fun serverHasStarted(context: Context?){
-            sendBroadcast(context, STATUS_VALUE_STARTED)
-        }
-
-        /**
-         *通知 服务器已停止
-         */
-        fun serverStop(context: Context?){
-            sendBroadcast(context, STATUS_VALUE_STOP)
-        }
-
-        /**
-         * 发送广播
-         */
-        private fun sendBroadcast(context: Context?,status:Int){
-            val broadcast = Intent(ACTION)
-            broadcast.putExtra(STATUS_KEY,status)
-            context?.sendBroadcast(broadcast)
-        }
     }
 
-    private var mActivity:MainActivity? = null
-    private var mServerFragment:ServerFragment? = serverFragment
-
-    init {
-        this.mActivity = serverFragment.context as MainActivity
-    }
+    private var mActivity:MainActivity = mainActivity
+    private var mServerFragment = serverFragment
 
     /**
      * 注册广播接收器
      */
     fun register(){
         val filter = IntentFilter(ACTION)
-        mActivity?.registerReceiver(this,filter)
+        mActivity.registerReceiver(this,filter)
     }
 
     /**
      * 注销广播接收器
      */
     fun unRegister(){
-        mActivity?.unregisterReceiver(this)
+        mActivity.unregisterReceiver(this)
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -78,16 +44,15 @@ class ServerStatusReceiver(serverFragment: ServerFragment) : BroadcastReceiver()
             val status = intent.getIntExtra(STATUS_KEY,0)
             when(status){
                 STATUS_VALUE_START ->{
-                    mServerFragment?.serverStart()
+                    mServerFragment.serverStart()
                 }
                 STATUS_VALUE_STARTED ->{
-                    mServerFragment?.serverStarted()
+                    mServerFragment.serverStarted()
                 }
                 STATUS_VALUE_STOP -> {
-                    mServerFragment?.serverStop()
+                    mServerFragment.serverStop()
                 }
             }
-
         }
     }
 }

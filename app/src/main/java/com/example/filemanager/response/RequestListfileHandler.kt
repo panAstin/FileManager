@@ -6,12 +6,8 @@ import com.example.filemanager.FileBean
 import com.example.filemanager.FileType
 import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.utils.FileUtil
-import com.yanzhenjie.andserver.RequestHandler
-import com.yanzhenjie.andserver.util.HttpRequestParser
-import org.apache.http.HttpRequest
-import org.apache.http.HttpResponse
-import org.apache.http.entity.StringEntity
-import org.apache.http.protocol.HttpContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import java.net.URLDecoder
 
@@ -19,25 +15,20 @@ import java.net.URLDecoder
  * Created by 11046 on 2017/12/6.
  * 列出文件handler
  */
-class RequestListfileHandler:RequestHandler{
-    val ROOT_PATH = Environment.getExternalStorageDirectory().path    //根目录
-    override fun handle(request: HttpRequest?, response: HttpResponse?, context: HttpContext?) {
-        val params = HttpRequestParser.parse(request)
-        Log.i("Andserver","Params"+params.toString())
+class RequestListfileHandler{
+    private val ROOT_PATH = Environment.getExternalStorageDirectory().path    //根目录
+    fun listFiles(params:Map<String,String>):JSONArray? {
+        Log.i("Nanoserver","Params"+params.toString())
 
         val path = ROOT_PATH + URLDecoder.decode(params["path"],"utf-8")
         val key = URLDecoder.decode(params["key"],"utf-8")
         val type = URLDecoder.decode(params["sort"],"utf-8")
         if(key=="" && type=="") {
             val file = File(path)
-            if (file.exists() && file.isDirectory) {
-                val se = StringEntity(listFile(file), "utf-8")
-                se.setContentType("text/json")
-                response?.setStatusCode(200)
-                response?.entity = se
+            return if (file.exists() && file.isDirectory) {
+                getFile(file)
             } else {
-                response?.setStatusCode(500)
-                response?.entity = StringEntity("Wrong path!", "utf-8")
+                null
             }
         }else if (key==""){
             var sortfile = ArrayList<FileBean>()
@@ -52,51 +43,40 @@ class RequestListfileHandler:RequestHandler{
                     sortfile = FileSortUtil.mAllFiles[FileType.video]!!
                 }
             }
-            val se = StringEntity(listFile(sortfile), "utf-8")
-            se.setContentType("text/json")
-            response?.setStatusCode(200)
-            response?.entity = se
+            return getFile(sortfile)
         } else{
             val results = FileUtil.FileSearch(key,path)
-            val se = StringEntity(listFile(results), "utf-8")
-            se.setContentType("text/json")
-            response?.setStatusCode(200)
-            response?.entity = se
+            return getFile(results)
         }
     }
 
     /**
      * 将文件转为json
      */
-    private fun listFile(file:File):String{
+    private fun getFile(file:File):JSONArray{
         val files = file.listFiles()
-        val js = StringBuilder()
-        js.append("[")
+        val js = JSONArray()
         files
                 .filterNot {
                     it.isHidden
                 }
                 .forEach{
                     val fb = FileBean(it)
-                    js.append("{\"name\":\""+it.name+"\",\"type\":\""+ fb.getTypeID()+"\"},")
+                    val jsonobj = JSONObject()
+                    jsonobj.put("name",it.name)
+                    jsonobj.put("type",fb.getTypeID().toString())
+                    js.put(jsonobj)
                 }
-        js.deleteCharAt(js.lastIndex)
-        if(js.last()==','){
-            js.deleteCharAt(js.lastIndex)
-        }
-        js.append("]")
-        return js.toString()
+        return js
     }
-    private fun listFile(filebean:ArrayList<FileBean>):String{
-        val js = StringBuilder()
-        js.append("[")
+    private fun getFile(filebean:ArrayList<FileBean>):JSONArray{
+        val js = JSONArray()
         for(fb in filebean){
-            js.append("{\"name\":\""+fb.getFile().name+"\",\"type\":\""+ fb.getTypeID()+"\"},")
+            val jsonobj = JSONObject()
+            jsonobj.put("name",fb.getFile().name)
+            jsonobj.put("type",fb.getTypeID().toString())
+            js.put(jsonobj)
         }
-        if(js.last()==','){
-            js.deleteCharAt(js.lastIndex)
-        }
-        js.append("]")
-        return js.toString()
+        return js
     }
 }
