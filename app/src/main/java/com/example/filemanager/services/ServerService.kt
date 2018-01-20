@@ -1,12 +1,11 @@
 package com.example.filemanager.services
 
 import android.app.Service
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.res.AssetManager
 import android.util.Log
 import com.example.filemanager.HttpServer
+import com.example.filemanager.activities.MainActivity
 import com.example.filemanager.receivers.ServerStatusReceiver
 
 /**
@@ -16,13 +15,11 @@ import com.example.filemanager.receivers.ServerStatusReceiver
 class ServerService: Service() {
     private var mServer:HttpServer? = null  //AndServer
     private var mAssetManager:AssetManager? = null
-    private var preference:SharedPreferences? = null
 
     override fun onCreate() {
         mAssetManager = assets
-        preference = getSharedPreferences("ServerSetting", Context.MODE_PRIVATE)
-        val port = preference!!.getInt("port",9090)
-        val savemode = preference!!.getInt("mode",0)
+        val port = MainActivity.CONFIG["port"]!!.toInt()
+        val savemode = MainActivity.CONFIG["mode"]!!.toInt()
 
         mServer = HttpServer(mAssetManager!!,savemode,port)  //服务器
     }

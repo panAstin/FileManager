@@ -5,13 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import com.example.filemanager.activities.MainActivity
-import com.example.filemanager.fragments.ServerFragment
+import com.example.filemanager.utils.ServerUtil
 
 /**
  * Created by 11046 on 2017/11/28.
  * 服务器状态广播接收器
  */
-class ServerStatusReceiver(serverFragment: ServerFragment,mainActivity: MainActivity) : BroadcastReceiver() {
+class ServerStatusReceiver(private var serverUtil: ServerUtil, mainActivity: MainActivity) : BroadcastReceiver() {
     companion object {
         val ACTION = "com.example.filemanager.receiver"
         val STATUS_KEY = "STATUS_KEY"
@@ -21,7 +21,6 @@ class ServerStatusReceiver(serverFragment: ServerFragment,mainActivity: MainActi
     }
 
     private var mActivity:MainActivity = mainActivity
-    private var mServerFragment = serverFragment
 
     /**
      * 注册广播接收器
@@ -44,13 +43,13 @@ class ServerStatusReceiver(serverFragment: ServerFragment,mainActivity: MainActi
             val status = intent.getIntExtra(STATUS_KEY,0)
             when(status){
                 STATUS_VALUE_START ->{
-                    mServerFragment.serverStart()
+                    serverUtil.serverStart()
                 }
                 STATUS_VALUE_STARTED ->{
-                    mServerFragment.serverStarted()
+                    serverUtil.serverStarted()
                 }
                 STATUS_VALUE_STOP -> {
-                    mServerFragment.serverStop()
+                    serverUtil.serverStop()
                 }
             }
         }

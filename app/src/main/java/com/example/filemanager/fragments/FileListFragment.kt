@@ -387,7 +387,7 @@ class FileListFragment : Fragment() {
         fmadapter?.setListData(mFiles!!)
         Handler().postDelayed( { //消息处理延迟执行
             fmadapter?.notifyDataSetChanged()
-        },500)
+        },800)
     }
 
     //提示信息

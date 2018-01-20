@@ -65,6 +65,7 @@ class RequestListfileHandler{
                     val jsonobj = JSONObject()
                     jsonobj.put("name",it.name)
                     jsonobj.put("type",fb.getTypeID().toString())
+                    jsonobj.put("path",it.path.replace(ROOT_PATH,""))
                     js.put(jsonobj)
                 }
         return js
@@ -75,6 +76,7 @@ class RequestListfileHandler{
             val jsonobj = JSONObject()
             jsonobj.put("name",fb.getFile().name)
             jsonobj.put("type",fb.getTypeID().toString())
+            jsonobj.put("path",fb.getFile().path.replace(ROOT_PATH,""))
             js.put(jsonobj)
         }
         return js

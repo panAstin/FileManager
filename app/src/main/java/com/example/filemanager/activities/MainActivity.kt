@@ -22,27 +22,31 @@ import android.content.*
 import android.support.v4.app.Fragment
 import android.support.v4.widget.DrawerLayout
 import android.support.v7.app.ActionBarDrawerToggle
-import android.widget.AdapterView
-import android.widget.ListView
-import android.widget.SimpleAdapter
+import android.text.TextUtils
+import android.widget.Button
+import android.widget.TextView
 import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.R
 import com.example.filemanager.fragments.FileListFragment
-import com.example.filemanager.fragments.ServerFragment
+import com.example.filemanager.utils.ServerUtil
+import com.example.filemanager.fragments.SettingDialogFragment
 import com.example.filemanager.utils.SnackbarUtil
-import java.util.*
 import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        var CONFIG = HashMap<String,String>()
+    }
     private val REQUEST_CODE = 11
     private var tablayout: TabLayout? = null
     private var viewpager: ViewPager? = null
     private var mDrawerLayout:DrawerLayout? = null
     private var mDrawerToggle:ActionBarDrawerToggle? = null
     private var toolbar:Toolbar? = null
-    private var dl_list:ListView? = null
+    private var address_tv:TextView? = null
     private val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.INTERNET)
     private var mPermissionList = ArrayList<String>()
+    private var serverUtil:ServerUtil? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +61,7 @@ class MainActivity : AppCompatActivity() {
         //}
 
         checkPermissions()
-
+        initConf()
     }
 
     /**
@@ -68,7 +72,7 @@ class MainActivity : AppCompatActivity() {
         mDrawerLayout = find(R.id.dl_left)
         tablayout = find(R.id.tablayout)
         viewpager = find(R.id.viewpager)
-        dl_list = find(R.id.drawermenu)
+        address_tv = find(R.id.address_tv)
 
         setSupportActionBar(toolbar)
         mDrawerToggle = ActionBarDrawerToggle(this,mDrawerLayout,toolbar,R.string.open,R.string.close)
@@ -80,56 +84,19 @@ class MainActivity : AppCompatActivity() {
         viewpager?.adapter =fragmentpageadapter
         viewpager?.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tablayout))
         tablayout?.setupWithViewPager(viewpager)
-        binddata()
-        dl_list?.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-            //侧滑菜单点击监听
-            selectItem(position)
-        }
+        serverUtil = ServerUtil(this)
     }
 
     /**
-     * 侧滑菜单绑定数据
+     * 初始化设置信息
      */
-    private fun binddata(){
-        val texts = arrayOf("文件管理","远程管理","退出")
-        val icons = arrayOf(R.drawable.fmbtn,R.drawable.lkbtn,R.drawable.shutdown)
-        val data:ArrayList<Map<String,Any>> = ArrayList()
-        for (index in texts.indices){
-            val item = HashMap<String,Any>()
-            item.put("txt",texts[index])
-            item.put("icon",icons[index])
-            data.add(item)
-        }
-        val simplead = SimpleAdapter(this,data,R.layout.dl_menu, arrayOf("txt","icon"),
-                intArrayOf(R.id.menu_tv,R.id.menu_img))
-        dl_list?.adapter = simplead
+    private fun initConf(){
+        val preferences = getSharedPreferences("ServerSetting", Context.MODE_PRIVATE)
+        CONFIG.put("mode",preferences.getInt("mode",0).toString())
+        CONFIG.put("synflag",preferences.getBoolean("synflag",false).toString())
+        CONFIG.put("port",preferences.getInt("port",9090).toString())
     }
 
-    /**
-     * 侧滑菜单项点击
-     */
-    private fun selectItem(position: Int){
-        when (position){
-            0 -> {
-                if(getVisibleFragment() is ServerFragment){
-                    supportFragmentManager.beginTransaction().remove(getVisibleFragment()).commit()
-                }
-                tablayout?.visibility = View.VISIBLE
-                viewpager?.visibility = View.VISIBLE
-                mDrawerLayout?.closeDrawers()            }
-            1 ->{
-                if(getVisibleFragment() is FileListFragment){
-                    supportFragmentManager.beginTransaction().add(R.id.fragmentcontent,ServerFragment().newInstnace()).commit()
-                }
-                tablayout?.visibility = View.GONE
-                viewpager?.visibility = View.GONE
-                mDrawerLayout?.closeDrawers()
-            }
-            2 ->{
-                quit(this)
-            }
-        }
-    }
     /**
      * 检查权限
      */
@@ -186,10 +153,41 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton("退出") { _, _ ->
                     // TODO Auto-generated method stub
                     FileSortUtil().destory()
+                    serverUtil?.destroy()
                     this.finish()
                 }.setNegativeButton("取消") { _, _ ->
             // TODO Auto-generated method stub
         }.show()
+    }
+
+    /**
+     * 服务器控制按钮监听
+     */
+    fun serverBtnOnClick(v:View){
+        when(v.id){
+            R.id.server_btn ->{
+                val serverBtn = v as Button
+                if(!ServerUtil.SWITCH){
+                    this.startService(serverUtil?.getservice())
+                    val ipformat = getString(R.string.httpadd)
+                    if(!TextUtils.isEmpty(ServerUtil.ip)){
+                        val port = CONFIG["port"]?.toInt()
+                        address_tv?.text = String.format(ipformat, ServerUtil.ip,port)
+                    }
+                    serverBtn.text = getString(R.string.stopserver)
+                    SnackbarUtil.short(v,"服务器启动")
+                }
+                else{
+                    this.stopService(serverUtil?.getservice())
+                    address_tv?.text = getText(R.string.noserver)
+                    serverBtn.text = getString(R.string.startserver)
+                }
+            }
+            R.id.setting_btn ->{
+                val dialog = SettingDialogFragment()
+                dialog.show(this.fragmentManager,"SettingDialogFragment")
+            }
+        }
     }
 
     /**

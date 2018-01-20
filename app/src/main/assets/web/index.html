@@ -13,6 +13,7 @@
     <script type="text/javascript" src="web/js/bootstrap-switch.min.js"></script>
     <script type="text/javascript" src="web/js/fileinput.min.js"></script>
     <script type="text/javascript" src="web/js/fileinput_locale_zh.js"></script>
+    <script type="text/javascript" src="web/js/filemanager.js"></script>
 </head>
 <body onload="listFile('')">
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -28,7 +29,7 @@
                 <a class="navbar-brand" href="#">文件管理</a>
             </div>
               
-            <!-- Collect the nav links, forms, and other content for toggling -->
+            <!-- 导航栏 -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li class="active"><a href="#"><span class="glyphicon glyphicon-th-large" aria-hidden="true"></span> 文件浏览<span class="sr-only">(current)</span></a></li>
@@ -41,11 +42,13 @@
                         </ul>
                     </li>
                 </ul>
+                <!-- 搜索框 -->
                 <form class="navbar-form navbar-left">
                     <div class="form-group">
                         <input type="text" class="form-control" id="keyword" placeholder="文件名">
                         <button type="button" class="btn btn-default" onclick="searchFile();">搜索</button>
                     </div>
+                    <!-- 上传下载按钮组 -->
                     <div class="btn-group" role="group" aria-label="updown">
                         <button type="button" class="btn btn-defaul" data-toggle="modal" data-target="#uploadModal"><span class="glyphicon glyphicon-upload" aria-hidden="true"></span> 上传文件</button>
                         <button type="button" class="btn btn-defaul" onclick="downloadFile()"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> 下载文件</button>
@@ -58,12 +61,19 @@
                             <input type="checkbox" checked />
                         </div>
                     </li> 
-                    <li><a href="#"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> 设置</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span> 常用操作 <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="javascript:void(0)" onclick="rename()"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span> 重命名</a></li>
+                            <li><a href="javascript:void(0)" onclick="delete()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> 删除</a></li>
+                            <li><a href="javascript:void(0)" onclick="copy()"><span class="glyphicon glyphicon-file" aria-hidden="true"></span> 复制</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </div><!-- /.navbar-collapse -->
         </div><!-- /.container-fluid -->
     </nav>
-    <!-- 模态框（Modal） -->
+    <!-- 上传文件模态框（Modal） -->
     <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -82,6 +92,7 @@
             </div><!-- /.modal-content -->
         </div><!-- /.modal -->
     </div>
+    <!-- 打开文件时模态框 -->
     <div class="modal fade bs-example-modal-lg" id="fileModal" tabindex="-1" role="dialog" aria-labelledby="fileModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -89,14 +100,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title" id="fileModalLabel">文件名</h4>
                 </div>
-                <div class="modal-body">
-                    <img id="modalimg" src="" class="img-responsive center-block" hidden="hidden">
-                    <video id="modalvideo" src="" controls hidden="hidden">
-                         浏览器不支持vedio标签
-                    </video>
-                    <audio id="modalaudio" src="" controls class="embed-responsive-item" hidden="hidden">
-                        浏览器不支持audio标签
-                    </audio>
+                <div class="modal-body" id="fmodalbody">
                 </div>
             </div>
         </div><!-- /.modal-content -->
@@ -113,283 +117,5 @@
             <div class="panel-footer" id="filecount">选中文件/当前总文件：</div>
         </div>
     </div>
-<script>
-    var fileamount = 0; //总文件数量
-    var xmlhttp; //ajax请求
-    var currentpath = new Array();
-    //请求文件
-    function listFile(filename){
-        var filepath = "";
-        $.each(currentpath,function(index,value){
-            filepath += value + "/";
-        });
-        filepath += filename;
-        xmlhttp=$.ajax({type:"POST",url:"listfile",data:{path:filepath,key:"",sort:""},async:true,success:function(){
-            //显示新文件列表
-            var xhrt = JSON.parse(xmlhttp.responseText);
-            showFile(xhrt);
-            $("#filecount").text("选中文件/当前总文件："+0+"/"+fileamount);
-            currentpath.push(filename);
-            updatepath();
-            }
-        });    
-    }
-
-    //分类文件
-    function sortFile(sorttype){
-        xmlhttp=$.ajax({type:"POST",url:"listfile",data:{path:"",key:"",sort:sorttype},async:true,success:function(){
-            //显示新文件列表
-            var xhrt = JSON.parse(xmlhttp.responseText);
-            if($.isEmptyObject(xhrt)){
-                $("#fileList").empty();
-            }else{
-                showFile(xhrt);
-            }
-            $("#filecount").text(sorttype);
-            }
-        });
-    }
-
-    //搜索文件
-    function searchFile(){
-        var keyword = $("#keyword").val();
-        var searchpath = "";
-        $.each(currentpath,function(index,value){
-            searchpath += value + "/";
-        });
-        xmlhttp=$.ajax({type:"POST",url:"listfile",data:{path:searchpath,key:keyword,sort:""},async:true,success:function(){
-            //显示新文件列表
-            var xhrt = JSON.parse(xmlhttp.responseText);
-            if($.isEmptyObject(xhrt)){
-                alert("未搜索到符合文件");
-            }else{
-                showFile(xhrt);
-            }
-            $("#filecount").text("选中文件/当前总文件："+0+"/"+fileamount);
-            }
-        });    
-    }
-
-    //文件显示
-    function showFile(xhrt){
-        //清空当前文件
-        $("#fileList").empty();
-        sfiles.clear();
-        fileamount = 0;
-        $.each(xhrt,function(index,content){
-            var icon = $("<img>");
-            var thumbnail = $("<div></div>").addClass("thumbnail");            
-            switch (content.type) {
-                case ("0"):
-                    icon.attr('src',"web/image/dict_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'0')","value":content.name});
-                    break;
-                case ("1"):
-                    icon.attr('src',"web/image/file_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'1')","value":content.name});
-                    break;
-                case ("2"):
-                    icon.attr('src',"web/image/doc_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'2')","value":content.name});
-                    break;
-                case ("3"):
-                    icon.attr('src',"web/image/music_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'3')","value":content.name});
-                    break;
-                case ("4"):
-                    icon.attr('src',"web/image/video_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'4')","value":content.name});
-                    break;
-                case ("5"):
-                    icon.attr('src',"web/image/zip_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'5')","value":content.name});
-                    break;
-                case ("6"):
-                    icon.attr('src',"web/image/apk_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'6')","value":content.name});
-                    break;
-                case ("7"):
-                    icon.attr('src',"web/image/img_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'7')","value":content.name});
-                    break;
-                default:
-                    icon.attr('src',"web/image/file_icon.png");
-                    thumbnail.attr({"onclick":"fileselect(this,'1')","value":content.name});
-                    break;
-            }
-            var name = $("<p></p>").text(content.name).addClass("text-center") .css({
-                "overflow":"hidden",
-                "text-overflow":"ellipsis",
-                "white-space":"nowrap" 
-            });
-            var afile = $("<div></div>").addClass("col-xs-4 col-sm-3 col-md-2 col-lg-1");
-            thumbnail.append(icon);
-            thumbnail.append(name);
-            afile.append(thumbnail);
-            $("#fileList").append(afile);
-            fileamount++;
-        });
-    }
-
-    //下载文件
-    function downloadFile(){
-        if(sfiles.size>0){
-            var cpath = "";
-            var files = "";
-            $.each(currentpath,function(index,value){
-                cpath += value + "/";
-            });
-            sfiles.forEach(function(item){
-                files += item + "/"
-            });
-            files = files.substring(0,files.length-1);
-            var form = $('<form method="POST" action="download">');
-            form.append($('<input type="hidden" name="path" value="' + cpath + '">'));
-            form.append($('<input type="hidden" name="filenames" value="' + files + '">'));
-            form.appendTo('body').submit().remove();
-        }else{
-            alert("请选择要下载的文件!")
-        }
-    }
-
-    //初始化控件
-    $(function (){
-        $("#sfswitch input").bootstrapSwitch('state',false);
-        $('#fileModal').on('hidden.bs.modal', function () {
-            $("#modalimg").attr({"src":"","hidden":"hidden"});
-            $("#modalaudio").attr({"src":"","hidden":"hidden"});
-            $("#modalvideo").attr({"src":"","hidden":"hidden"});            
-        });
-    });
-
-    //inputfile上传设置
-    $("#uploadfile").fileinput({
-        language : 'zh',
-        uploadUrl: 'upload', // 上传的地址
-        uploadExtraData: function(){
-            var uploadpath = "";
-            $.each(currentpath,function(index,value){
-                uploadpath += value + "/";
-            });
-            return {'path':uploadpath};
-        },
-        //allowedFileExtensions : ['xls','jpg', 'png','gif'],
-        maxFileCount: 10,   //同时最多上传10个文件
-        //allowedFileTypes: ['image', 'video', 'flash'],  这是允许的文件类型 跟上面的后缀名还不是一回事
-        //这是文件名替换
-        slugCallback: function(filename) {
-            return filename.replace('(', '_').replace(']', '_');
-        }
-    }).on("fileuploaded", function(event, data) {
-        if(data.response)
-        {
-            refreshFile()
-        }
-    });
-
-    //刷新文件列表
-    function refreshFile(){
-        var refreshpath = "";
-        $.each(currentpath,function(index,value){
-            if(value!=""){
-                refreshpath += "/" + value ;
-            }
-        });
-        clickpath(refreshpath)
-    }
-
-    //文件选择
-    var sfiles = new Set();
-    function fileselect(which,type){
-        var name = $(which).attr("value")
-        var flag = $("#sfswitch input").bootstrapSwitch('state');//获取选择模式开关状态
-        if(flag){
-            if(sfiles.has(name)){
-                sfiles.delete(name)
-                $(which).css("background-color","white")
-            }else{
-                sfiles.add(name)
-                $(which).css("background-color","#CCCCFF")
-            }
-            $("#filecount").text("选中文件/当前总文件："+ sfiles.size +"/"+fileamount);
-        }else{
-            if(type=="0"){
-                listFile(name);
-            }else{
-                openFile(name,type);
-            }
-            
-        }
-    }
-
-    //打开文件
-    function openFile(name,type){
-        var filepath = "/openfile";
-        $.each(currentpath,function(index,value){
-            filepath += value + "/";
-        });
-        filepath += name;
-        $("#fileModalLabel").text(name);
-        switch(type){
-            case ("1"):
-                break;
-            case ("2"):
-                break;
-            case ("3"):
-                $("#modalaudio").removeAttr("hidden");
-                $("#modalaudio").attr("src",filepath);
-                $("#fileModal").modal('show');
-                break;
-            case ("4"):
-                $("#modalvideo").removeAttr("hidden");
-                $("#modalvideo").attr("src",filepath);
-                $("#fileModal").modal('show');
-                break;
-            case ("5"):
-                break;
-            case ("6"):
-                break;
-            case ("7"):
-                $("#modalimg").removeAttr("hidden");
-                $("#modalimg").attr("src",filepath);
-                $("#fileModal").modal('show');
-                break;
-            default:
-                break;
-        }
-        
-    }
-
-    //路径点击
-    function clickpath(path){
-        if(path == "/"){
-            currentpath = new Array();
-            listFile('');
-        }else{
-            currentpath = path.split("/");
-            listFile(currentpath.pop());
-        }
-    }
-
-    //更新路径
-    function updatepath(){
-        $("#filepath").empty();
-        var cpath = "";
-        $.each(currentpath,function(index,value){                     
-            var patha = $("<a></a>").text(value);//.attr({href:"javascript:void(0)","onclick":"clickpath(\""+cpath+"\")"});
-            if(value==""){
-                patha.attr({href:"javascript:void(0)","onclick":"clickpath('')"});
-                var home = $("<span></span>").addClass("glyphicon glyphicon-home").attr("aria-hidden",true);
-                patha.append(home);
-            }else{
-                cpath += "/"+value;
-                patha.attr({href:"javascript:void(0)","onclick":"clickpath(\""+cpath+"\")"});
-            }
-            var pathli = $("<li></li>");
-            pathli.append(patha);
-            $("#filepath").append(pathli);
-        });
-    }
-</script>
 </body>
 </html>

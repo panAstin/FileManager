@@ -1,8 +1,10 @@
 package UI
 
+import android.app.Fragment
 import android.graphics.Color
 import android.support.v7.widget.Toolbar
 import android.view.Gravity
+import android.view.View
 import com.example.filemanager.activities.MainActivity
 import com.example.filemanager.R
 import org.jetbrains.anko.*
@@ -37,13 +39,16 @@ class MainActivityUI:AnkoComponent<MainActivity> {
                     relativeLayout {
                         backgroundColor = Color.WHITE
                         isClickable = true
-                        listView {
-                            id = R.id.drawermenu
-                        }.lparams(width = matchParent, height = wrapContent){
-                            alignParentBottom()
-                            bottomMargin = dip(30)
-                        }
-                    }.lparams(width = dip(180), height = matchParent, gravity = Gravity.START)
+                        //listView {
+                        //    id = R.id.drawermenu
+                        //}.lparams(width = matchParent, height = wrapContent){
+                         //   alignParentBottom()
+                         //   bottomMargin = dip(30)
+                        //}
+                        include<View>(R.layout.server_layout).lparams(width = matchParent, height = wrapContent){
+                               bottomMargin = dip(30)
+                            }
+                    }.lparams(width = dip(360), height = matchParent, gravity = Gravity.START)
                 }.lparams(width = matchParent, height = matchParent)
             }
     }
