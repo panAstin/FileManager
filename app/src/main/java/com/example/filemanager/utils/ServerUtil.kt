@@ -2,6 +2,8 @@ package com.example.filemanager.utils
 
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
 import com.example.filemanager.activities.MainActivity
 import com.example.filemanager.receivers.ServerStatusReceiver
 import com.example.filemanager.services.ServerService
@@ -47,7 +49,6 @@ class ServerUtil(var context: Context?){
     private var mService:Intent? = null
     private var mReceiver:ServerStatusReceiver? = null
 
-
     /**
      * 初始化服务器页面
      */
@@ -81,6 +82,14 @@ class ServerUtil(var context: Context?){
      */
     fun serverStop(){
         SWITCH = false
+    }
+
+    /**
+     * 获取wifi是否连接
+     */
+    fun ifWifiAvailabel():Boolean{
+        val wifiManager = context?.applicationContext?.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        return wifiManager.isWifiEnabled
     }
 
     fun destroy(){

@@ -44,8 +44,8 @@ class MainActivity : AppCompatActivity() {
     private var mDrawerToggle:ActionBarDrawerToggle? = null
     private var toolbar:Toolbar? = null
     private var address_tv:TextView? = null
-    private val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.INTERNET)
-    private var mPermissionList = ArrayList<String>()
+    //申请权限
+    private val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.INTERNET,Manifest.permission.ACCESS_WIFI_STATE,Manifest.permission.CHANGE_WIFI_STATE)
     private var serverUtil:ServerUtil? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -101,6 +101,7 @@ class MainActivity : AppCompatActivity() {
      * 检查权限
      */
     private fun checkPermissions() {
+         val mPermissionList = ArrayList<String>()
         //检查权限
         permissions
                 .filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
@@ -144,6 +145,40 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * 服务器控制按钮监听
+     */
+    fun serverBtnOnClick(v:View){
+        when(v.id){
+            R.id.server_btn ->{
+                if(serverUtil!!.ifWifiAvailabel()){ //wifi已连接
+                    val serverBtn = v as Button
+                    if(!ServerUtil.SWITCH){
+                        this.startService(serverUtil?.getservice())
+                        val ipformat = getString(R.string.httpadd)
+                        if(!TextUtils.isEmpty(ServerUtil.ip)){
+                            val port = CONFIG["port"]?.toInt()
+                            address_tv?.text = String.format(ipformat, ServerUtil.ip,port)
+                        }
+                        serverBtn.text = getString(R.string.stopserver)
+                        SnackbarUtil.short(v,"服务器启动")
+                    }
+                    else{
+                        this.stopService(serverUtil?.getservice())
+                        address_tv?.text = getText(R.string.noserver)
+                        serverBtn.text = getString(R.string.startserver)
+                    }
+                }else{
+                    SnackbarUtil.short(v,"请连接WiFi后使用！")
+                }
+            }
+            R.id.setting_btn ->{
+                val dialog = SettingDialogFragment()
+                dialog.show(this.fragmentManager,"SettingDialogFragment")
+            }
+        }
+    }
+
+    /**
      * 退出确认
      */
     private fun quit(context: Context){
@@ -158,36 +193,6 @@ class MainActivity : AppCompatActivity() {
                 }.setNegativeButton("取消") { _, _ ->
             // TODO Auto-generated method stub
         }.show()
-    }
-
-    /**
-     * 服务器控制按钮监听
-     */
-    fun serverBtnOnClick(v:View){
-        when(v.id){
-            R.id.server_btn ->{
-                val serverBtn = v as Button
-                if(!ServerUtil.SWITCH){
-                    this.startService(serverUtil?.getservice())
-                    val ipformat = getString(R.string.httpadd)
-                    if(!TextUtils.isEmpty(ServerUtil.ip)){
-                        val port = CONFIG["port"]?.toInt()
-                        address_tv?.text = String.format(ipformat, ServerUtil.ip,port)
-                    }
-                    serverBtn.text = getString(R.string.stopserver)
-                    SnackbarUtil.short(v,"服务器启动")
-                }
-                else{
-                    this.stopService(serverUtil?.getservice())
-                    address_tv?.text = getText(R.string.noserver)
-                    serverBtn.text = getString(R.string.startserver)
-                }
-            }
-            R.id.setting_btn ->{
-                val dialog = SettingDialogFragment()
-                dialog.show(this.fragmentManager,"SettingDialogFragment")
-            }
-        }
     }
 
     /**
