@@ -1,6 +1,5 @@
 package UI
 
-import android.app.Fragment
 import android.graphics.Color
 import android.support.v7.widget.Toolbar
 import android.view.Gravity
@@ -39,12 +38,6 @@ class MainActivityUI:AnkoComponent<MainActivity> {
                     relativeLayout {
                         backgroundColor = Color.WHITE
                         isClickable = true
-                        //listView {
-                        //    id = R.id.drawermenu
-                        //}.lparams(width = matchParent, height = wrapContent){
-                         //   alignParentBottom()
-                         //   bottomMargin = dip(30)
-                        //}
                         include<View>(R.layout.server_layout).lparams(width = matchParent, height = wrapContent){
                                bottomMargin = dip(30)
                             }
