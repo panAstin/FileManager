@@ -32,7 +32,6 @@ class SortActivity : AppCompatActivity() {
     private val Sortstxt = arrayOf("文档","下载","音乐","图片","视频","压缩包","安装包")
     private var sort = -1
     private var cacheThreadPool = Executors.newCachedThreadPool()           //线程池
-    private var iconCache = MemoryCacheUtils()             //图片缓存
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,7 +93,7 @@ class SortActivity : AppCompatActivity() {
         val fileBeans = FileSortUtil().getFilesByType(FileType.getFileTypeByOrdinal(sort))
         if(fileBeans != null){
           for (fb in fileBeans){
-              fb.initIcon(applicationContext,iconCache)
+              fb.initIcon(applicationContext)
               cacheThreadPool.execute{
                   try {
                       fb.setSize(FileUtil.getAutoFileOrFilesSize(fb.getFile().path))

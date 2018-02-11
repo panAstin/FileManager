@@ -4,14 +4,12 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Context
-import android.content.DialogInterface
 import android.os.*
 import android.support.v4.app.Fragment
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.ArrayMap
-import android.util.Log
 import android.view.*
 import android.widget.EditText
 import android.widget.SearchView
@@ -21,10 +19,7 @@ import com.example.filemanager.activities.MainActivity
 import com.example.filemanager.adapters.fmAdapter
 import com.example.filemanager.adapters.fmAdapter.Companion.selectFlag
 import com.example.filemanager.adapters.pathAdapter
-import com.example.filemanager.utils.FileUtil
-import com.example.filemanager.utils.MediaUtil
-import com.example.filemanager.utils.MemoryCacheUtils
-import com.example.filemanager.utils.SnackbarUtil
+import com.example.filemanager.utils.*
 import java.io.File
 import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
@@ -46,7 +41,6 @@ class FileListFragment : Fragment() {
     private var fmadapter: fmAdapter? = null
     private var mactivity: MainActivity? = null
     private var cacheThreadPool = Executors.newCachedThreadPool()           //线程池
-    private var iconCache = MemoryCacheUtils()             //图片缓存
 
     companion object {
         var selectedFiles: ArrayList<FileBean>? = null        //被选中的文件
@@ -183,6 +177,7 @@ class FileListFragment : Fragment() {
         if (selectedFiles != null) {
             menu.add(Menu.NONE, Menu.FIRST + 3, 5, "粘贴")
         }
+        menu.add(Menu.NONE, Menu.FIRST + 6, 7, "压缩")
         menu.add(Menu.NONE, Menu.FIRST + 2, 3, "取消")
     }
 
@@ -199,7 +194,10 @@ class FileListFragment : Fragment() {
                     val mFileName = editText.text.toString()
                     val IMAGES_PATH = "$currentpath/$mFileName/"       //获取根目录
                     FileUtil.createMkdir(IMAGES_PATH)
-                    fmadapter!!.addItem(FileBean(File(IMAGES_PATH)))
+                    val newfb = FileBean(File(IMAGES_PATH))
+                    newfb.setSize(FileUtil.getAutoFileOrFilesSize(IMAGES_PATH))
+                    newfb.initIcon(context)
+                    fmadapter!!.addItem(newfb)
                 }.setNegativeButton("取消", null).show()
             }
             Menu.FIRST + 2 -> displaySnackbar("取消")
@@ -246,36 +244,55 @@ class FileListFragment : Fragment() {
             Menu.FIRST + 5 ->{   //重命名
                 val file = getSelectedFiles().valueAt(0).getFile()
                 val position = getSelectedFiles().keyAt(0)
-                val factory = LayoutInflater.from(mactivity)
-                val view = factory.inflate(R.layout.rename_dialog, null)
-                val editText = view!!.findViewById(R.id.editText) as EditText
-                editText.setText(file.name)
-                val listener2 = DialogInterface.OnClickListener { _, _ ->
-                    // TODO Auto-generated method stub
-                    var modifyName = editText.text.toString()
-                    val fpath = file.parentFile.path
-                    var i = 0
-                    var newFile = File(fpath + "/" + modifyName)
-                    while (newFile.exists()){
-                        i++
-                        modifyName += "("+i.toString()+")"
-                        newFile = File(fpath + "/" + modifyName)
+                DialogFragmentHelper.showInsertDialog(fragmentManager,"重命名文件",file.name,
+                        object:IDialogResultListener<String>{
+                            override fun onDataResult(result: String) {
+                                var modifyName = result
+                                val fpath = file.parentFile.path
+                                var i = 0
+                                var newFile = File(fpath + "/" + modifyName)
+                                while (newFile.exists()){
+                                    i++
+                                    modifyName += "("+i.toString()+")"
+                                    newFile = File(fpath + "/" + modifyName)
+                                }
+                                if (FileUtil.renameFile(context,file,newFile)) {
+                                    mFiles!![position] = FileBean(newFile).getInitailed(context)
+                                    fmadapter!!.notifyItemChanged(position)
+                                    displaySnackbar("重命名成功！")
+                                } else {
+                                    displaySnackbar("重命名失败！")
+                                }
+                            }
+                        },true)
+            }
+            Menu.FIRST + 6 ->{   //压缩
+                val files = ArrayList<File>()
+                val filebeans = getSelectedFiles()
+                var zipresult = false
+                for (filebean in filebeans){
+                    if (!filebean.value.getFile().exists()) {
+                        displaySnackbar("压缩失败")
                     }
-                    if (FileUtil.renameFile(context,file,newFile)) {
-                        mFiles!![position] = FileBean(newFile)
-                        fmadapter!!.notifyItemChanged(position)
-                        displaySnackbar("重命名成功！")
-                    } else {
-                        displaySnackbar("重命名失败！")
+                    files.add(filebean.value.getFile())
+                }
+
+                DialogFragmentHelper.showInsertDialog(fragmentManager,"输入压缩文件名","",
+                        object:IDialogResultListener<String>{
+                    override fun onDataResult(result: String) {
+                        val zippath = currentpath + File.separator + result + ".zip"
+                        if (FileUtil.zipFiles(files,zippath)) {
+                            zipresult = true
+                        }
+                        if(zipresult){
+                            fmadapter!!.addItem(FileBean(File(zippath)))
+                            displaySnackbar("压缩成功")
+                        }else{
+                            displaySnackbar("压缩失败")
+                        }
                     }
-                }
-                val renameDialog = AlertDialog.Builder(view.context)
-                renameDialog.setView(view)
-                renameDialog.setPositiveButton("确定", listener2)
-                renameDialog.setNegativeButton("取消") { _, _ ->
-                    // TODO Auto-generated method stub
-                }
-                renameDialog.show()
+                },true)
+
             }
         }
         return false
@@ -307,8 +324,6 @@ class FileListFragment : Fragment() {
                     topath += "/" + Pathnotes[i]
                     i++
                 }
-                //重置选择
-                selectFlag = 0
                 mactivity!!.invalidateOptionsMenu()
                 showFileDir(topath)
             }
@@ -359,6 +374,11 @@ class FileListFragment : Fragment() {
      * @param path 文件路径
      */
     private fun showFileDir(path: String) {
+        //重置选择
+        selectFlag = 0
+        SEARCH_SWITCH = 0
+        currentpath = path
+
         mFiles = ArrayList()
         Pathnotes.clear()
         val file = File(path)
@@ -372,7 +392,7 @@ class FileListFragment : Fragment() {
                 }
                 .forEach {
                     val fb  = FileBean(it)
-                    fb.initIcon(context,iconCache)
+                    fb.initIcon(context)
                     cacheThreadPool.execute{
                         try {
                             fb.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
@@ -381,8 +401,6 @@ class FileListFragment : Fragment() {
                         }
                     }
                     mFiles!!.add(fb) }
-        SEARCH_SWITCH = 0
-        currentpath = path
 
         fmadapter?.setListData(mFiles!!)
         Handler().postDelayed( { //消息处理延迟执行
@@ -433,7 +451,7 @@ class FileListFragment : Fragment() {
                     }
                     if (key in it.name) {
                         val fb = FileBean(it)
-                        fb.initIcon(context,iconCache)
+                        fb.initIcon(context)
                         cacheThreadPool.execute {
                             try {
                                 fb.setSize(FileUtil.getAutoFileOrFilesSize(it.path))

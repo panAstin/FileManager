@@ -13,12 +13,8 @@ import java.util.ArrayList
 
 internal class pathAdapter//参数初始化
 (context: Context) : RecyclerView.Adapter<pathAdapter.myViewHolder>() {
-    private val inflater: LayoutInflater
+    private val inflater: LayoutInflater = LayoutInflater.from(context)
 
-
-    init {
-        inflater = LayoutInflater.from(context)
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int)= myViewHolder(inflater.inflate(R.layout.path, parent, false))
 

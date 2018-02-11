@@ -11,6 +11,7 @@ import java.io.*
 
 import java.text.DecimalFormat
 import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 object FileUtil {
@@ -363,7 +364,7 @@ object FileUtil {
      * @param file 待压缩文件
      * @param baseDir 基本路径
      */
-    fun recursionZip(zos:ZipOutputStream,file:File,baseDir:String) {
+    private fun recursionZip(zos:ZipOutputStream,file:File,baseDir:String) {
         var bDir = baseDir
         if (file.isDirectory) {
             Log.i("zip tag","the file is dir name -->>" + file.name + " the baseDir-->>>" + bDir)
@@ -392,6 +393,49 @@ object FileUtil {
                 len=input.read(buf)
             }
             input.close()
+        }
+    }
+
+    /**
+     * 解压缩文件
+     * @param zipFilePath 压缩文件路径
+     * @param targetDir 解压目标目录
+     */
+    fun unzipFile(zipFilePath:String,targetDir:String){
+        val buffer = 4096  //缓冲区大小
+        var strEntry:String?  //保存每个zip的条目名称
+        try {
+            var dest: BufferedOutputStream? //缓冲输出流
+            val fis = FileInputStream(zipFilePath)
+            val zis = ZipInputStream(BufferedInputStream(fis))
+            var entry:ZipEntry = zis.nextEntry   //每个zip条目的实例
+            while (entry != null){
+                try {
+                    Log.i("UnZip:","="+entry)
+                    val data = ByteArray(buffer)
+                    strEntry = entry.name
+                    val entryFile = File(targetDir + strEntry)
+                    val entryDir = File(entryFile.parent)
+                    if(!entryDir.exists()){
+                        entryDir.mkdirs()
+                    }
+                    val fos = FileOutputStream(entryFile)
+                    dest = BufferedOutputStream(fos,buffer)
+                    var len = zis.read(data,0,buffer)
+                    while (len != -1){
+                        dest.write(data,0,len)
+                        len = zis.read(data,0,buffer)
+                    }
+                    dest.flush()
+                    dest.close()
+                }catch (e:Exception){
+                    e.printStackTrace()
+                }
+                entry = zis.nextEntry
+            }
+            zis.close()
+        }catch (ex:Exception){
+            ex.printStackTrace()
         }
     }
 }

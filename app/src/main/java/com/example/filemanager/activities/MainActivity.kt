@@ -92,9 +92,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initConf(){
         val preferences = getSharedPreferences("ServerSetting", Context.MODE_PRIVATE)
-        CONFIG.put("mode",preferences.getInt("mode",0).toString())
-        CONFIG.put("synflag",preferences.getBoolean("synflag",false).toString())
-        CONFIG.put("port",preferences.getInt("port",9090).toString())
+        CONFIG["mode"] = preferences.getInt("mode",0).toString()
+        CONFIG["synflag"] = preferences.getBoolean("synflag",false).toString()
+        CONFIG["port"] = preferences.getInt("port",9090).toString()
     }
 
     /**
@@ -166,6 +166,7 @@ class MainActivity : AppCompatActivity() {
                         this.stopService(serverUtil?.getservice())
                         address_tv?.text = getText(R.string.noserver)
                         serverBtn.text = getString(R.string.startserver)
+                        SnackbarUtil.short(v,"服务器停止")
                     }
                 }else{
                     SnackbarUtil.short(v,"请连接WiFi后使用！")

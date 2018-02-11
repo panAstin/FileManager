@@ -42,7 +42,7 @@ class SettingDialogFragment:DialogFragment(){
         val preferences = context.getSharedPreferences("ServerSetting",Context.MODE_PRIVATE)
         modespinner?.setSelection(preferences.getInt("mode",0),true)
         synswitch?.isChecked = preferences.getBoolean("synflag",false)
-        portedit?.hint = preferences.getInt("port",9090).toString()
+        portedit?.hint = ""+ preferences.getInt("port",9090)
     }
 
     private fun saveSet(){

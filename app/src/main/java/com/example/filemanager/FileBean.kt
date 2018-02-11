@@ -14,6 +14,16 @@ import java.util.*
  * 封装文件与文件大小、文件图标
  */
 class FileBean(private var file: File) {
+    companion object {
+        private var iconCache:MemoryCacheUtils? = null        //图片缓存
+
+        fun getCache():MemoryCacheUtils {
+            if (iconCache==null){
+                iconCache = MemoryCacheUtils()
+            }
+            return iconCache!!
+        }
+    }
     private var date:String = ""
     private var size:String = ""
     private var typeID:Int = 0
@@ -22,8 +32,8 @@ class FileBean(private var file: File) {
     private val Icons = arrayOf(R.drawable.dict,R.drawable.file,R.drawable.doc,  R.drawable.music, R.drawable.video, R.drawable.zip, R.drawable.apk)
     private val txttypes = arrayOf("text/plain", "application/msword", "application/pdf", "application/vnd.ms-powerpoint", "application/vnd.ms-excel") //文档类型
 
-    fun setDate(date:String){
-        this.date = date
+    fun setDate(){
+        this.date = format.format(Date(file.lastModified()))
     }
 
     fun setSize(size:String){
@@ -61,17 +71,23 @@ class FileBean(private var file: File) {
         }
     }
 
-    fun initIcon(context: Context,iconCacheUtils: MemoryCacheUtils){
+    fun initIcon(context: Context){
             if (typeID<7) {
-                val iconincache = iconCacheUtils.getBitmapFromMemory(typeID)
+                val iconincache = getCache().getBitmapFromMemory(typeID)
                 icon = if(iconincache!=null){
                     iconincache
                 }else{
                     val iconbitmap = BitmapFactory.decodeResource(context.resources, Icons[typeID])
-                    iconCacheUtils.setBitmapToMemory(typeID,iconbitmap)
+                    getCache().setBitmapToMemory(typeID,iconbitmap)
                     iconbitmap
                 }
         }
+    }
+
+    fun getInitailed(context:Context):FileBean{
+        this.initIcon(context)
+        this.setSize(FileUtil.getAutoFileOrFilesSize(this.file.path))
+        return this
     }
 
     init {

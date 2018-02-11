@@ -18,6 +18,7 @@ class ServerService: Service() {
 
     override fun onCreate() {
         mAssetManager = assets
+        Log.i("fffffff",MainActivity.CONFIG.toString())
         val port = MainActivity.CONFIG["port"]!!.toInt()
         val savemode = MainActivity.CONFIG["mode"]!!.toInt()
 
@@ -36,10 +37,6 @@ class ServerService: Service() {
         super.onDestroy()
 
         stopServer()    //停止服务器
-
-        if(mAssetManager!=null){
-            mAssetManager?.close()
-        }
     }
 
     /**
