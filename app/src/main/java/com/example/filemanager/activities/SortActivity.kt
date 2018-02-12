@@ -1,8 +1,6 @@
 package com.example.filemanager.activities
 
 import UI.SortActivityUI
-import android.app.AlertDialog
-import android.content.DialogInterface
 import android.graphics.Color
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -13,13 +11,10 @@ import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.Toolbar
 import android.util.ArrayMap
 import android.view.*
-import android.widget.EditText
 import com.example.filemanager.*
 import com.example.filemanager.adapters.fmAdapter
 import com.example.filemanager.fragments.FileListFragment
-import com.example.filemanager.utils.FileSortUtil
-import com.example.filemanager.utils.FileUtil
-import com.example.filemanager.utils.MemoryCacheUtils
+import com.example.filemanager.utils.*
 import org.jetbrains.anko.setContentView
 import java.io.File
 import java.util.concurrent.Executors
@@ -57,7 +52,7 @@ class SortActivity : AppCompatActivity() {
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder) {        //点击
 
                 if(fmAdapter.selectFlag >0){
-                    fmAdapter.isSelectd!![viewHolder.adapterPosition] = when(fmAdapter.isSelectd!![viewHolder.adapterPosition] ){
+                    fmAdapter.isSelected!![viewHolder.adapterPosition] = when(fmAdapter.isSelected!![viewHolder.adapterPosition] ){
                         true -> false
                         else -> true
                     }
@@ -69,9 +64,7 @@ class SortActivity : AppCompatActivity() {
                     if (file.exists() && file.canRead()) {            // 文件存在并可读
                         FileUtil.openFile(this@SortActivity,file)              //打开文件
                     } else {   //没有权限
-                        AlertDialog.Builder(this@SortActivity).setTitle("信息")     //弹出窗口
-                                .setMessage("没有权限!")
-                                .setPositiveButton("确定") {  _,  _ -> displaySnackbar("没有权限") }.show()
+                        DialogFragmentHelper.showTips(supportFragmentManager,"没有权限!")
                     }
                 }
             }
@@ -121,22 +114,28 @@ class SortActivity : AppCompatActivity() {
         menuItemD.setOnMenuItemClickListener({//删除文件
             val filebeans = getSelectedFiles()
             var i = filebeans.size - 1
-            AlertDialog.Builder(this)
-                    .setTitle("注意!")
-                    .setMessage("确定要删除选中的文件吗？")
-                    .setPositiveButton("确定") { _, _ ->
-                        do {
-                            if (FileUtil.deleteFile(this,filebeans.valueAt(i).getFile())) {
-                                fmadapter!!.removeItem(filebeans.keyAt(i)) //移除列表项
-                                displaySnackbar("删除成功！")
-                            } else {
-                                displaySnackbar("删除失败！")
+            DialogFragmentHelper.showConfirmDialog(supportFragmentManager,"确定要删除选中的文件吗？",
+                    object :IDialogResultListener<Int>{
+                        override fun onDataResult(result: Int) {
+                            if (-1 == result){
+                                try {
+                                    while (i> -1 ) {
+                                        if (FileUtil.deleteFile(this@SortActivity, filebeans.valueAt(i).getFile())) {
+                                            fmadapter!!.removeItem(filebeans.keyAt(i)) //移除列表项
+                                        }
+                                        i--
+                                    }
+                                    displaySnackbar("删除成功！")
+                                }catch (e:Exception){
+                                    e.stackTrace
+                                    displaySnackbar("删除失败！")
+                                }
+                                changeSelecFlag(null)
+                            }else{
+                                displaySnackbar("操作取消")
                             }
-                            i--
-                        }while (i> -1 )
-                        changeSelecFlag(null)
-                    }
-                    .setNegativeButton("取消") { _, _ -> }.show()
+                        }
+                    },true,null)
             true
         })
         menuItemA.setOnMenuItemClickListener({
@@ -179,36 +178,27 @@ class SortActivity : AppCompatActivity() {
             Menu.FIRST + 5 ->{ //重命名
                 val file = getSelectedFiles().valueAt(0).getFile()
                 val position = getSelectedFiles().keyAt(0)
-                val factory = LayoutInflater.from(this)
-                val view = factory.inflate(R.layout.rename_dialog, null)
-                val editText = view!!.findViewById(R.id.editText) as EditText
-                editText.setText(file.name)
-                val listener2 = DialogInterface.OnClickListener { _, _ ->
-                    // TODO Auto-generated method stub
-                    var modifyName = editText.text.toString()
-                    val fpath = file.parentFile.path
-                    var i = 0
-                    var newFile = File(fpath + "/" + modifyName)
-                    while (newFile.exists()){
-                        i++
-                        modifyName += "("+i.toString()+")"
-                        newFile = File(fpath + "/" + modifyName)
-                    }
-                    if (FileUtil.renameFile(this,file,newFile)) {
-                        sFiles!![position] = FileBean(newFile)
-                        fmadapter!!.notifyItemChanged(position)
-                        displaySnackbar("重命名成功！")
-                    } else {
-                        displaySnackbar("重命名失败！")
-                    }
-                }
-                val renameDialog = AlertDialog.Builder(view.context)
-                renameDialog.setView(view)
-                renameDialog.setPositiveButton("确定", listener2)
-                renameDialog.setNegativeButton("取消") { _, _ ->
-                    // TODO Auto-generated method stub
-                }
-                renameDialog.show()
+                DialogFragmentHelper.showInsertDialog(this.supportFragmentManager,"重命名文件",file.name,
+                        object: IDialogResultListener<String> {
+                            override fun onDataResult(result: String) {
+                                var modifyName = result
+                                val fpath = file.parentFile.path
+                                var i = 0
+                                var newFile = File(fpath + "/" + modifyName)
+                                while (newFile.exists()){
+                                    i++
+                                    modifyName += "("+i.toString()+")"
+                                    newFile = File(fpath + "/" + modifyName)
+                                }
+                                if (FileUtil.renameFile(this@SortActivity,file,newFile)) {
+                                    sFiles!![position] = FileBean(newFile).getInitailed(this@SortActivity)
+                                    fmadapter!!.notifyItemChanged(position)
+                                    displaySnackbar("重命名成功！")
+                                } else {
+                                    displaySnackbar("重命名失败！")
+                                }
+                            }
+                        },true)
             }
         }
         return false
@@ -217,7 +207,7 @@ class SortActivity : AppCompatActivity() {
     //获取被选中的文件
     private fun getSelectedFiles():ArrayMap<Int,FileBean>{
         val files = ArrayMap<Int,FileBean>()
-        for (isselect in fmAdapter.isSelectd!!){
+        for (isselect in fmAdapter.isSelected!!){
             if(isselect.value){
                 files.put(isselect.key,sFiles!![isselect.key])
             }
@@ -230,9 +220,9 @@ class SortActivity : AppCompatActivity() {
         fmAdapter.selectFlag = when{
             fmAdapter.selectFlag > 0 -> 0
             else ->{
-                fmadapter!!.initIsSelectd()
+                fmadapter!!.initIsSelected()
                 if (position!=null){
-                    fmAdapter.isSelectd!![position] = true
+                    fmAdapter.isSelected!![position] = true
                 }
                 1
             }
@@ -243,8 +233,8 @@ class SortActivity : AppCompatActivity() {
 
     //全选
     private fun selectAll(){
-        if(fmadapter!!.getSelectCount()< fmAdapter.isSelectd!!.size){
-            for (isselect in fmAdapter.isSelectd!!){
+        if(fmadapter!!.getSelectCount()< fmAdapter.isSelected!!.size){
+            for (isselect in fmAdapter.isSelected!!){
                 if (!isselect.value){
                     isselect.setValue(true)
                 }

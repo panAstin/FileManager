@@ -1,17 +1,15 @@
 package com.example.filemanager.fragments
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
-import android.app.ProgressDialog
 import android.content.Context
 import android.os.*
+import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.ArrayMap
 import android.view.*
-import android.widget.EditText
 import android.widget.SearchView
 import android.widget.TextView
 import com.example.filemanager.*
@@ -36,7 +34,6 @@ class FileListFragment : Fragment() {
     private var patharea: RecyclerView? = null
     private var pathtxt:TextView? = null
     private var SEARCH_SWITCH = 0
-    private var progressDialog: ProgressDialog? = null
     private var pathadapter: pathAdapter? = null
     private var fmadapter: fmAdapter? = null
     private var mactivity: MainActivity? = null
@@ -65,7 +62,6 @@ class FileListFragment : Fragment() {
     override fun onAttach(context: Context?) {
         super.onAttach(context)
         mactivity=context as MainActivity
-        progressDialog = ProgressDialog(mactivity)
     }
 
     /**
@@ -85,7 +81,17 @@ class FileListFragment : Fragment() {
                     displaySnackbar("请输入关键字")
                 } else {
                     //显示ProgressDialog
-                    initprogressdialog("正在搜索...","请稍候...",0)
+                    DialogFragmentHelper.showProgress(fragmentManager,"正在搜索...",
+                            true,object :CommonDialogFragment.OnDialogCancelListener{
+                        override fun onCancel() {
+                            try {
+                                isFinished = false
+                                displaySnackbar("搜索已中断！")
+                            } catch (e:Exception){
+                                e.printStackTrace()
+                            }
+                        }
+                    })
                     //新建线程
                     cacheThreadPool.execute{
                          //需要花时间的方法
@@ -106,18 +112,10 @@ class FileListFragment : Fragment() {
                          } catch(e:Exception) {
                              e.printStackTrace()
                          } finally {
-                             progressDialog?.dismiss()
+                             val pdf = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
+                             pdf.dismiss()
                          }
                      }
-                    progressDialog?.setOnCancelListener({
-                        try {
-                            isFinished = false
-                            displaySnackbar("搜索已中断！")
-                        } catch (e:Exception){
-                            e.printStackTrace()
-                        }
-                    })
-                    progressDialog?.show()
                 }
                 return false
             }
@@ -133,25 +131,28 @@ class FileListFragment : Fragment() {
         menuItemD.setOnMenuItemClickListener({//删除文件
             val filebeans = getSelectedFiles()
             var i = filebeans.size - 1
-            AlertDialog.Builder(mactivity)
-                    .setTitle("注意!")
-                    .setMessage("确定要删除选中的文件吗？")
-                    .setPositiveButton("确定") { _, _ ->
-                        try {
-                            while (i> -1 ) {
-                                if (FileUtil.deleteFile(context, filebeans.valueAt(i).getFile())) {
-                                    fmadapter!!.removeItem(filebeans.keyAt(i)) //移除列表项
+            DialogFragmentHelper.showConfirmDialog(fragmentManager,"确定要删除选中的文件吗？",
+                    object :IDialogResultListener<Int>{
+                        override fun onDataResult(result: Int) {
+                            if (-1 == result){
+                                try {
+                                    while (i> -1 ) {
+                                        if (FileUtil.deleteFile(context, filebeans.valueAt(i).getFile())) {
+                                            fmadapter!!.removeItem(filebeans.keyAt(i)) //移除列表项
+                                        }
+                                        i--
+                                    }
+                                    displaySnackbar("删除成功！")
+                                }catch (e:Exception){
+                                    e.stackTrace
+                                    displaySnackbar("删除失败！")
                                 }
-                                i--
+                                changeSelecFlag(null)
+                            }else{
+                                displaySnackbar("操作取消")
                             }
-                            displaySnackbar("删除成功！")
-                        }catch (e:Exception){
-                            e.stackTrace
-                            displaySnackbar("删除失败！")
                         }
-                        changeSelecFlag(null)
-                    }
-                    .setNegativeButton("取消") { _, _ -> }.show()
+                    },true,null)
             true
         })
         menuItemA.setOnMenuItemClickListener({
@@ -165,6 +166,7 @@ class FileListFragment : Fragment() {
             menuItemA.isVisible = true
             menu.add(Menu.NONE, Menu.FIRST + 4, 4, "复制")
             menu.add(Menu.NONE, Menu.FIRST + 5, 6, "重命名")
+            menu.add(Menu.NONE, Menu.FIRST + 6, 8, "压缩")
             if(fmadapter!!.getSelectCount() > 1){
                 menu.findItem(Menu.FIRST + 5).isEnabled = false
             }
@@ -177,7 +179,6 @@ class FileListFragment : Fragment() {
         if (selectedFiles != null) {
             menu.add(Menu.NONE, Menu.FIRST + 3, 5, "粘贴")
         }
-        menu.add(Menu.NONE, Menu.FIRST + 6, 7, "压缩")
         menu.add(Menu.NONE, Menu.FIRST + 2, 3, "取消")
     }
 
@@ -187,23 +188,22 @@ class FileListFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             Menu.FIRST + 1 -> {  //新建文件夹
-                val editText = EditText(view?.context)
-                AlertDialog.Builder(view?.context).setTitle("请输入文件名称").setView(editText).setPositiveButton("确定"
-                ) { _, _ ->
-                    // TODO Auto-generated method stub
-                    val mFileName = editText.text.toString()
-                    val IMAGES_PATH = "$currentpath/$mFileName/"       //获取根目录
-                    FileUtil.createMkdir(IMAGES_PATH)
-                    val newfb = FileBean(File(IMAGES_PATH))
-                    newfb.setSize(FileUtil.getAutoFileOrFilesSize(IMAGES_PATH))
-                    newfb.initIcon(context)
-                    fmadapter!!.addItem(newfb)
-                }.setNegativeButton("取消", null).show()
+                DialogFragmentHelper.showInsertDialog(fragmentManager,"请输入文件名称","",
+                        object:IDialogResultListener<String>{
+                            override fun onDataResult(result: String) {
+                                // TODO Auto-generated method stub
+                                val mFileName = result
+                                val newfilepath = "$currentpath/$mFileName/"       //获取根目录
+                                FileUtil.createMkdir(newfilepath)
+                                val newfb = FileBean(File(newfilepath)).getInitailed(context)
+                                fmadapter!!.addItem(newfb)
+                            }
+                        },true)
             }
             Menu.FIRST + 2 -> displaySnackbar("取消")
             Menu.FIRST + 3 -> {    //粘贴文件
                 //显示ProgressDialog
-                initprogressdialog("正在粘贴...","请稍候...",selectedFiles!!.size)
+                DialogFragmentHelper.showProgress(fragmentManager,"正在粘贴...",true)
                 //新建线程
                 val mthread = Thread(Runnable {
                     for (selectfile in selectedFiles!!) {
@@ -215,17 +215,16 @@ class FileListFragment : Fragment() {
                             if(MediaUtil.isMediaFile(targetpath)){
                                 MediaUtil.sendScanFileBroadcast(context,targetpath)
                             }
-                            progressDialog?.incrementProgressBy(1)
                         } catch (e: Exception) {
                             e.printStackTrace()
                             displaySnackbar("粘贴失败")
                         } finally {
-                            progressDialog?.dismiss()
+                            val pdf = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
+                            pdf.dismiss()
                             displaySnackbar("粘贴成功")
                         }
                     }
                 })
-                progressDialog?.show()
                 mthread.start()
             }
             Menu.FIRST + 4 -> {   //复制文件
@@ -285,7 +284,8 @@ class FileListFragment : Fragment() {
                             zipresult = true
                         }
                         if(zipresult){
-                            fmadapter!!.addItem(FileBean(File(zippath)))
+                            fmadapter?.changeSelecFlag()
+                            fmadapter!!.addItem(FileBean(File(zippath)).getInitailed(context))
                             displaySnackbar("压缩成功")
                         }else{
                             displaySnackbar("压缩失败")
@@ -337,7 +337,7 @@ class FileListFragment : Fragment() {
         mRecyclerView!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(mRecyclerView) {
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder) {        //点击
                 if (selectFlag > 0) {           //选择模式下，点击选择文件项
-                    fmAdapter.isSelectd!![viewHolder.adapterPosition] = when (fmAdapter.isSelectd!![viewHolder.adapterPosition]) {
+                    fmAdapter.isSelected!![viewHolder.adapterPosition] = when (fmAdapter.isSelected!![viewHolder.adapterPosition]) {
                         true -> false
                         else -> true
                     }
@@ -353,9 +353,7 @@ class FileListFragment : Fragment() {
                             FileUtil.openFile(context, file)               //打开文件
                         }
                     } else {   //没有权限
-                        AlertDialog.Builder(mactivity).setTitle("信息")     //弹出窗口
-                                .setMessage("没有权限!")
-                                .setPositiveButton("确定") { _, _ -> displaySnackbar("没有权限") }.show()
+                        DialogFragmentHelper.showTips(fragmentManager,"没有权限!")
                     }
                 }
             }
@@ -414,24 +412,6 @@ class FileListFragment : Fragment() {
     }
 
     /**
-     * 初始化进度框
-     * @param title 标题
-     * @param message 提示信息
-     * @param max 最大值
-     */
-    fun initprogressdialog(title:String,message: String,max:Int){
-        progressDialog?.setTitle(title)    //标题
-        progressDialog?.setMessage(message)  //显示信息
-        if(max>0){       //已知进度值
-            progressDialog?.max = max
-            progressDialog?.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
-        }else{           //未知进度值
-            progressDialog?.isIndeterminate=true
-        }
-        progressDialog?.setCancelable(true)
-    }
-
-    /**
      * 文件搜索
      *@param key 关键字
      * @param path 路径
@@ -470,7 +450,7 @@ class FileListFragment : Fragment() {
      */
     private fun getSelectedFiles():ArrayMap<Int,FileBean>{
         val files = ArrayMap<Int,FileBean>()
-        for (isselect in fmAdapter.isSelectd!!){
+        for (isselect in fmAdapter.isSelected!!){
             if(isselect.value){
                 files.put(isselect.key,mFiles!![isselect.key])
             }
@@ -485,9 +465,9 @@ class FileListFragment : Fragment() {
         selectFlag = when{
             selectFlag > 0 -> 0
             else ->{
-                fmadapter!!.initIsSelectd()
+                fmadapter!!.initIsSelected()
                 if (position!=null){
-                    fmAdapter.isSelectd!![position] = true
+                    fmAdapter.isSelected!![position] = true
                 }
                 1
             }
@@ -500,8 +480,8 @@ class FileListFragment : Fragment() {
      * 全选
      */
     private fun selectAll(){
-        if(fmadapter!!.getSelectCount()< fmAdapter.isSelectd!!.size){
-            for (isselect in fmAdapter.isSelectd!!){
+        if(fmadapter!!.getSelectCount()< fmAdapter.isSelected!!.size){
+            for (isselect in fmAdapter.isSelected!!){
                 if (!isselect.value){
                     isselect.setValue(true)
                 }
@@ -519,7 +499,8 @@ class FileListFragment : Fragment() {
     object : Handler() {
         override fun handleMessage(msg: Message) {
             //关闭ProgressDialog
-            progressDialog?.dismiss()
+            val pdf = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
+            pdf.dismiss()
             //更新UI
             if(msg.arg1 == 1){
                 fmadapter?.setListData(mFiles!!)

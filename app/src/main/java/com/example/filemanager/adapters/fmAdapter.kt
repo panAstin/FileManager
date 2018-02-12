@@ -24,13 +24,13 @@ internal class fmAdapter//参数初始化
     private val inflater: LayoutInflater
     private var fileBeans: ArrayList<FileBean> = ArrayList()    //存储文件信息
     companion object {
-        var isSelectd: ArrayMap<Int,Boolean>? =null   // 存储CheckBox选择信息
+        var isSelected: ArrayMap<Int,Boolean>? =null   // 存储CheckBox选择信息
         var selectFlag = 0          //选择模式标识
     }
     private val animation: Animation
 
     init {
-        isSelectd = ArrayMap()
+        isSelected = ArrayMap()
         inflater = LayoutInflater.from(context)
         animation = AnimationUtils.loadAnimation(context, R.anim.list_anim)
     }
@@ -71,7 +71,7 @@ internal class fmAdapter//参数初始化
         holder.cb.tag = i
         if (selectFlag >0){
             holder.cb.visibility = View.VISIBLE
-            holder.cb.isChecked = isSelectd!![i]!!
+            holder.cb.isChecked = isSelected!![i]!!
         }else{
             holder.cb.visibility = View.GONE
         }
@@ -86,25 +86,25 @@ internal class fmAdapter//参数初始化
         selectFlag = when{
             selectFlag > 0 -> 0
             else ->{
-                initIsSelectd()
+                initIsSelected()
                 1
             }
         }
         notifyDataSetChanged()
     }
 
-    fun initIsSelectd(){
-        isSelectd!!.clear()
+    fun initIsSelected(){
+        isSelected!!.clear()
         var i = 0
         do {
-            isSelectd!!.put(i,false)
+            isSelected!![i] = false
             i++
         }while (i<fileBeans.size)
     }
 
     fun getSelectCount():Int{
         var count = 0
-        for (isselect in isSelectd!!){
+        for (isselect in isSelected!!){
             if (isselect.value){
                 count++
             }

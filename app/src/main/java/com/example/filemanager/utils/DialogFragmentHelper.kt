@@ -52,6 +52,8 @@ object DialogFragmentHelper {
         return dialogFragment
     }
 
+    fun getProgressTag() = PROGRESS_TAG
+
     /**
      * 简单提示弹出窗
      */
@@ -78,7 +80,7 @@ object DialogFragmentHelper {
 
     fun showConfirmDialog(fragmentManager: FragmentManager, message: String,
                           listener: IDialogResultListener<Int>?, cancelable: Boolean,
-                          cancelListener: CommonDialogFragment.OnDialogCancelListener) {
+                          cancelListener: CommonDialogFragment.OnDialogCancelListener?) {
         val dialogFragment = CommonDialogFragment.newInstance(object : CommonDialogFragment.OnCallDialog {
             override fun getDialog(context: Context): Dialog {
                 val builder = AlertDialog.Builder(context, THEMES)
@@ -93,7 +95,6 @@ object DialogFragmentHelper {
             }
         }, cancelable, cancelListener)
         dialogFragment.show(fragmentManager, CONfIRM_TAG)
-
     }
 
     /**
