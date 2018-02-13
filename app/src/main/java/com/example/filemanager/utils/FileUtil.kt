@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.support.v4.content.FileProvider
 import android.util.Log
 import com.example.filemanager.FileBean
@@ -11,6 +12,7 @@ import java.io.*
 
 import java.text.DecimalFormat
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
@@ -359,31 +361,60 @@ object FileUtil {
     }
 
     /**
+     * 读取压缩文件列表
+     *
+     */
+    fun readZipfiles(filepath:String):ArrayList<FileBean>{
+        val ltag = "readzip"
+        val files = ArrayList<FileBean>()
+        val zipfile = ZipFile(filepath)
+        val bis = BufferedInputStream(FileInputStream(filepath))
+        val zin = ZipInputStream(bis)
+        var ze = zin.nextEntry
+        while (ze != null){
+            Log.i(ltag,"file-"+ze.name+":"+ze.size)
+            if(ze.size>0){
+                val br = BufferedReader(InputStreamReader(zipfile.getInputStream(ze)))
+                var line = br.readLine()
+                while (line != null){
+                    Log.i(ltag,line)
+                    line = br.readLine()
+                }
+                br.close()
+            }
+            ze = zin.nextEntry
+        }
+        zin.closeEntry()
+        return files
+    }
+
+    /**
      * 递归压缩
      * @param zos 压缩输出流
      * @param file 待压缩文件
      * @param baseDir 基本路径
      */
     private fun recursionZip(zos:ZipOutputStream,file:File,baseDir:String) {
+        val ltag = "zip"
         var bDir = baseDir
         if (file.isDirectory) {
             Log.i("zip tag","the file is dir name -->>" + file.name + " the baseDir-->>>" + bDir)
             val files = file.listFiles()
-            for(f in files){
-                if(f==null){
-                    continue
-                }
-                if(f.isDirectory){
-                    bDir = file.name + File.separator + f.name + File.separator
-                    Log.i("zip tag","bdir111 -->>" + bDir)
-                    recursionZip(zos,f,bDir)
-                }else{
-                    Log.i("zip tag","bdir222 -->>" + bDir)
-                    recursionZip(zos,f,bDir)
-                }
-            }
+            files
+                    .asSequence()
+                    .filterNotNull()
+                    .forEach {
+                        if(it.isDirectory){
+                            bDir = file.name + File.separator + it.name + File.separator
+                            Log.i(ltag,"bdir111 -->>" + bDir)
+                            recursionZip(zos, it,bDir)
+                        }else{
+                            Log.i(ltag,"bdir222 -->>" + bDir)
+                            recursionZip(zos, it,bDir)
+                        }
+                    }
         }else{
-            Log.i("zip tag","the file name is  -->>" + file.name + " the base dir-->>" + bDir)
+            Log.i(ltag,"the file name is  -->>" + file.name + " the base dir-->>" + bDir)
             val buf = ByteArray(2048)
             val input = BufferedInputStream(FileInputStream(file))
             zos.putNextEntry(ZipEntry(bDir + file.name))
@@ -401,41 +432,96 @@ object FileUtil {
      * @param zipFilePath 压缩文件路径
      * @param targetDir 解压目标目录
      */
-    fun unzipFile(zipFilePath:String,targetDir:String){
-        val buffer = 4096  //缓冲区大小
-        var strEntry:String?  //保存每个zip的条目名称
-        try {
-            var dest: BufferedOutputStream? //缓冲输出流
-            val fis = FileInputStream(zipFilePath)
-            val zis = ZipInputStream(BufferedInputStream(fis))
-            var entry:ZipEntry = zis.nextEntry   //每个zip条目的实例
-            while (entry != null){
-                try {
-                    Log.i("UnZip:","="+entry)
-                    val data = ByteArray(buffer)
-                    strEntry = entry.name
-                    val entryFile = File(targetDir + strEntry)
-                    val entryDir = File(entryFile.parent)
-                    if(!entryDir.exists()){
-                        entryDir.mkdirs()
-                    }
-                    val fos = FileOutputStream(entryFile)
-                    dest = BufferedOutputStream(fos,buffer)
-                    var len = zis.read(data,0,buffer)
-                    while (len != -1){
-                        dest.write(data,0,len)
-                        len = zis.read(data,0,buffer)
-                    }
-                    dest.flush()
-                    dest.close()
-                }catch (e:Exception){
-                    e.printStackTrace()
-                }
-                entry = zis.nextEntry
-            }
-            zis.close()
-        }catch (ex:Exception){
-            ex.printStackTrace()
+    fun unzipFile(zipFilePath:String,targetDir:String):Boolean{
+        val ltag = "unzip"
+        val zfile:ZipFile
+        try {// 转码为GBK格式，支持中文
+            zfile = ZipFile(zipFilePath)
+        }catch (e:IOException){
+            e.printStackTrace()
+            return false
         }
+        val zList = zfile.entries()
+        var ze:ZipEntry?
+        val buf = ByteArray(4096)
+        while (zList.hasMoreElements()){
+            ze = zList.nextElement()
+            // 列举压缩文件里面的各个文件，判断是否为目录
+            if(ze!!.isDirectory){
+                val dirstr = targetDir + ze.name
+                Log.i(ltag,dirstr)
+                dirstr.trim()
+                val f = File(dirstr)
+                f.mkdir()
+                continue
+            }
+            var os: OutputStream?
+            var fos:FileOutputStream?
+            // 返回实体的File
+            val realFile = getRealFile(targetDir, ze.name)
+            try {
+                fos = FileOutputStream(realFile)
+            }catch (e:FileNotFoundException){
+                Log.e(ltag,e.message)
+                return false
+            }
+            os = BufferedOutputStream(fos)
+            var ins:InputStream?
+            try {
+                ins = BufferedInputStream(zfile.getInputStream(ze))
+            }catch (e:IOException){
+                Log.e(ltag,e.message)
+                return false
+            }
+            var readLen = ins.read(buf,0,1024)
+            // 进行一些内容复制操作
+            try {
+                while (readLen != -1){
+                    os.write(buf,0,readLen)
+                    readLen = ins.read(buf,0,1024)
+                }
+            }catch (e:IOException){
+                Log.e(ltag,e.message)
+                return false
+            }
+            try {
+                ins.close()
+                os.close()
+            }catch (e:IOException){
+                Log.e(ltag,e.message)
+                return false
+            }
+        }
+        try {
+            zfile.close()
+        }catch (e:IOException){
+            Log.e(ltag,e.message)
+            return false
+        }
+        return true
+    }
+
+    /**
+     * 获取真实文件
+     * @param baseDir 指定根目录
+     * @param absFileName 相对路径名
+     */
+    fun getRealFile(baseDir: String,absFileName:String):File{
+        val fileName = absFileName.replace("\\","/")
+        val dirs = fileName.split("/")
+        var ret = File(baseDir)
+        if (dirs.size>1){
+            for (substr in dirs){
+                ret = File(ret,substr)
+            }
+            if(!ret.exists()){
+                ret.mkdirs()
+            }
+            ret = File(ret,dirs.last())
+            return ret
+        }else {
+            ret = File(ret,fileName)
+        }
+        return ret
     }
 }

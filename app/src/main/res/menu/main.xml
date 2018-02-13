@@ -25,4 +25,11 @@
         app:showAsAction="ifRoom"
         android:visible="false"/>
 
+    <item
+        android:id="@+id/unzip"
+        android:title="@string/unzip"
+        android:orderInCategory="60"
+        app:showAsAction="ifRoom"
+        android:visible="false"/>
+
 </menu>

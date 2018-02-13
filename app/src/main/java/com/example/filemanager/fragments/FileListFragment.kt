@@ -73,6 +73,7 @@ class FileListFragment : Fragment() {
         val menuItemS = menu.findItem(R.id.search)
         val menuItemD = menu.findItem(R.id.delete)
         val menuItemA = menu.findItem(R.id.selectAll)
+        val menuItemZ = menu.findItem(R.id.unzip)
         val searchView = menuItemS.actionView as android.support.v7.widget.SearchView
         //设置搜索的事件
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener, android.support.v7.widget.SearchView.OnQueryTextListener {
@@ -112,8 +113,10 @@ class FileListFragment : Fragment() {
                          } catch(e:Exception) {
                              e.printStackTrace()
                          } finally {
-                             val pdf = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
-                             pdf.dismiss()
+                             if(null != fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag())){
+                                 val pdf:DialogFragment? = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
+                                 pdf?.dismiss()
+                             }
                          }
                      }
                 }
@@ -155,25 +158,55 @@ class FileListFragment : Fragment() {
                     },true,null)
             true
         })
+        menuItemZ.setOnMenuItemClickListener({
+            when(selectFlag){
+                2 -> {
+                    val filebean = getSelectedFiles()[0]
+                    if(FileUtil.unzipFile(filebean!!.getFile().path,currentpath)){
+                        showFileDir(currentpath)
+                        displaySnackbar("解压完成")
+                    }else{
+                        displaySnackbar("解压失败")
+                    }
+                    selectFlag = 0
+                }
+                3 -> {
+                    showFileDir(ROOT_PATH)
+                    selectFlag = 2
+                }
+            }
+            true
+        })
         menuItemA.setOnMenuItemClickListener({
             selectAll()
             mactivity?.invalidateOptionsMenu()
             true
         })
-        if(selectFlag>0){
-            menuItemS.isVisible = false
-            menuItemD.isVisible = true
-            menuItemA.isVisible = true
-            menu.add(Menu.NONE, Menu.FIRST + 4, 4, "复制")
-            menu.add(Menu.NONE, Menu.FIRST + 5, 6, "重命名")
-            menu.add(Menu.NONE, Menu.FIRST + 6, 8, "压缩")
-            if(fmadapter!!.getSelectCount() > 1){
-                menu.findItem(Menu.FIRST + 5).isEnabled = false
+        when(selectFlag) {
+            0 -> {
+                menuItemS.isVisible = true
+                menuItemD.isVisible = false
+                menuItemA.isVisible = false
+                menuItemZ.isVisible = false
             }
-        }else{
-            menuItemS.isVisible = true
-            menuItemD.isVisible = false
-            menuItemA.isVisible = false
+            1 -> {
+                menuItemS.isVisible = false
+                menuItemD.isVisible = true
+                menuItemA.isVisible = true
+                menuItemZ.isVisible = false
+                menu.add(Menu.NONE, Menu.FIRST + 4, 4, "复制")
+                menu.add(Menu.NONE, Menu.FIRST + 5, 6, "重命名")
+                menu.add(Menu.NONE, Menu.FIRST + 6, 8, "压缩")
+                if (fmadapter!!.getSelectCount() > 1) {
+                    menu.findItem(Menu.FIRST + 5).isEnabled = false
+                }
+            }
+            2 or 3 -> {
+                menuItemS.isVisible = false
+                menuItemD.isVisible = false
+                menuItemA.isVisible = false
+                menuItemZ.isVisible = true
+            }
         }
         menu.add(Menu.NONE, Menu.FIRST + 1, 7, "新建文件夹")
         if (selectedFiles != null) {
@@ -373,7 +406,6 @@ class FileListFragment : Fragment() {
      */
     private fun showFileDir(path: String) {
         //重置选择
-        selectFlag = 0
         SEARCH_SWITCH = 0
         currentpath = path
 
@@ -519,7 +551,7 @@ class FileListFragment : Fragment() {
      * 返回键事件
      */
     fun onBack():Boolean{    //返回键
-        if(selectFlag > 0){          //退出选择模式
+        if(selectFlag == 1){          //退出选择模式
             changeSelecFlag(null)
             return true
         } else if (currentpath!=ROOT_PATH){    //返回上级目录

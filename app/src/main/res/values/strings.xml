@@ -6,6 +6,7 @@
     <string name="searchtitle">搜索</string>
     <string name="deletetitle">删除</string>
     <string name="selectAll">全选</string>
+    <string name="unzip">解压缩</string>
     <string name="open">打开</string>
     <string name="close">关闭</string>
     <string name="startserver">启动服务器</string>

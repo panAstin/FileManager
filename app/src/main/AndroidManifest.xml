@@ -28,6 +28,7 @@
         </activity>
         <activity android:name=".activities.SortActivity"/>
         <service android:name=".services.ServerService"/>
+        <service android:name=".services.WifiDirectService"/>
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="com.11046.panAstin"
