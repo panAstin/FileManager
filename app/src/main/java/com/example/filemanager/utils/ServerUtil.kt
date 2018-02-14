@@ -34,7 +34,7 @@ class ServerUtil(var context: Context?){
                             continue
                         }
                         ip = ia.hostAddress
-                        if (!"127.0.0.1".equals(ip)) {
+                        if ("127.0.0.1" != ip) {
                             return ia.hostAddress
                         }
                     }

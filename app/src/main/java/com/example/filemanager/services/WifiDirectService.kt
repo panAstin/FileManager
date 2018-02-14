@@ -6,23 +6,25 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.*
+import android.os.Environment
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import com.example.filemanager.FileAsyncClient
+import com.example.filemanager.FileAsyncServer
 import com.example.filemanager.receivers.WifiDirectReceiver
-import java.io.IOException
 import java.net.InetAddress
-import java.net.ServerSocket
 
 /**
  * Created by 11046 on 2018/2/12.
  * wifidirect服务
  */
-class WifiDirectService:IntentService("Wifip2pIntentService"),WifiP2pManager.PeerListListener,WifiP2pManager.ConnectionInfoListener{
+class WifiDirectService:IntentService("Wifip2pIntentService"),WifiP2pManager.ConnectionInfoListener{
     private var mManager:WifiP2pManager? = null
     private var mChannel:WifiP2pManager.Channel? = null
     private var mFilter:IntentFilter? = null
     private var mWifiDirectReceiver:WifiDirectReceiver? = null
+    private var syncpath = Environment.getExternalStorageDirectory().path + "Share"
 
     private var connected = false
 
@@ -107,10 +109,12 @@ class WifiDirectService:IntentService("Wifip2pIntentService"),WifiP2pManager.Pee
             Log.i("wifip2p","server")
             address = info.groupOwnerAddress
             isGroupOwner = true
+            FileAsyncServer()
         }else if(info.groupFormed){
             Log.i("wifip2p","client")
             address = info.groupOwnerAddress
             isGroupOwner = false
+            FileAsyncClient(address)
         }
         if(null != address){
             connected = true
@@ -121,26 +125,17 @@ class WifiDirectService:IntentService("Wifip2pIntentService"),WifiP2pManager.Pee
         connected = false
     }
 
-    //发现周围设备
-    override fun onPeersAvailable(peers: WifiP2pDeviceList?) {
+    val peerListListener = WifiP2pManager.PeerListListener { peers ->
+        //发现周围设备
+        Log.e("wifip2p",peers.toString())
         val config = WifiP2pConfig()
         config.deviceAddress = peers!!.deviceList.first().deviceAddress
         config.wps.setup = WpsInfo.PBC
         connectDevice(config)
     }
 
+
     override fun onBind(intent: Intent?): IBinder {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    private fun FilesyncServer(){
-        try {
-            val serverSocket = ServerSocket(8988)
-            val client = serverSocket.accept()
-        }catch (e:IOException){
-            Log.e("wifip2p",e.message)
-        }
-
-
     }
 }

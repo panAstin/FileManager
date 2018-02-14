@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.NetworkInfo
 import android.net.wifi.p2p.WifiP2pManager
+import android.util.Log
 import com.example.filemanager.services.WifiDirectService
 
 /**
@@ -24,6 +25,7 @@ class WifiDirectReceiver() : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         val action = intent?.action
         if(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION == action){
+            Log.e("wifip2p","state changed")
             //判断wifi p2p是否可用
             val state=intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE,-1)
             if(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED){
@@ -32,9 +34,11 @@ class WifiDirectReceiver() : BroadcastReceiver() {
                 service?.setIsWifiDirectEnable(false)
             }
         }else if(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION == action){
+            Log.e("wifip2p","peers changed")
             //可用设备列表发生变化
-            manager?.requestPeers(service?.getChannel(),service)
+            manager?.requestPeers(service?.getChannel(),service?.peerListListener)
         }else if(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION == action){
+            Log.e("wifip2p","connection changed")
             //连接状态发生改变
             val info:NetworkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO)
             if (info.isConnected){

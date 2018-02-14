@@ -30,6 +30,7 @@ import com.example.filemanager.R
 import com.example.filemanager.fragments.FileListFragment
 import com.example.filemanager.utils.ServerUtil
 import com.example.filemanager.fragments.SettingDialogFragment
+import com.example.filemanager.services.WifiDirectService
 import com.example.filemanager.utils.SnackbarUtil
 import kotlin.collections.ArrayList
 
@@ -62,6 +63,9 @@ class MainActivity : AppCompatActivity() {
 
         checkPermissions()
         initConf()
+        if(CONFIG["synflag"]!!.toBoolean()){
+            doFileAsync()
+        }
     }
 
     /**
@@ -110,8 +114,8 @@ class MainActivity : AppCompatActivity() {
             initview()
         } else {
             //进入到这里代表没有权限.
-            val mpermissions = mPermissionList.toArray()
-            ActivityCompat.requestPermissions(this, mpermissions as Array<out String>, REQUEST_CODE)
+            val mpermissions = mPermissionList.toTypedArray()
+            ActivityCompat.requestPermissions(this, mpermissions, REQUEST_CODE)
         }
     }
 
@@ -142,6 +146,11 @@ class MainActivity : AppCompatActivity() {
     fun getVisibleFragment(): Fragment? {
         val fragments = this@MainActivity.supportFragmentManager.fragments
         return fragments.firstOrNull { it != null && it.isVisible }
+    }
+
+    fun doFileAsync(){
+        val wifiDirectService = Intent(this,WifiDirectService::class.java)
+        this.startService(wifiDirectService)
     }
 
     /**
