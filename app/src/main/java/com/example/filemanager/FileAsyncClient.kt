@@ -1,9 +1,11 @@
 package com.example.filemanager
 
+import android.util.Log
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 import java.nio.channels.SocketChannel
@@ -14,9 +16,11 @@ import java.util.concurrent.ArrayBlockingQueue
  * Created by 11046 on 2018/2/14.
  * 文件同步客户端
  */
-class FileAsyncClient(var address: InetAddress){
+class FileAsyncClient(private var address: InetAddress){
     // 创建一个套接字通道，注意这里必须使用无参形式
     private var selector: Selector? = null
+    //使用Map保存每个连接，当OP_READ就绪时，根据key找到对应的文件对其进行写入。若将其封装成一个类，作为值保存，可以再上传过程中显示进度等等
+    var fileMap: Map<SelectionKey, FileChannel> = HashMap()
     var charset = Charset.forName("UTF-8")
     @Volatile
     private var stop = false
@@ -34,7 +38,7 @@ class FileAsyncClient(var address: InetAddress){
         } else {
             channel.register(selector, SelectionKey.OP_CONNECT)
         }
-
+        Log.e("wifip2p","client")
 
         //启动一个接受服务器反馈的线程
         //  new Thread(new ReceiverInfo()).start();
@@ -97,7 +101,7 @@ class FileAsyncClient(var address: InetAddress){
         byteBuffer.flip()
         sc.write(byteBuffer)
         if (!byteBuffer.hasRemaining()) {
-            println("Send 2 client successed")
+            println("Send successed")
         }
     }
 }

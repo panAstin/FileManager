@@ -19,20 +19,28 @@ import org.jetbrains.anko.find
 import com.example.filemanager.adapters.FragmentPageAdapter
 import UI.MainActivityUI
 import android.content.*
+import android.net.wifi.WpsInfo
+import android.net.wifi.p2p.WifiP2pConfig
+import android.net.wifi.p2p.WifiP2pManager
 import android.support.v4.app.Fragment
 import android.support.v4.widget.DrawerLayout
 import android.support.v7.app.ActionBarDrawerToggle
 import android.text.TextUtils
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import com.example.filemanager.FileAsyncClient
+import com.example.filemanager.FileAsyncServer
 import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.R
 import com.example.filemanager.fragments.FileListFragment
 import com.example.filemanager.utils.ServerUtil
 import com.example.filemanager.fragments.SettingDialogFragment
-import com.example.filemanager.services.WifiDirectService
+import com.example.filemanager.receivers.WifiDirectReceiver
 import com.example.filemanager.utils.SnackbarUtil
+import java.net.InetAddress
 import kotlin.collections.ArrayList
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -45,6 +53,11 @@ class MainActivity : AppCompatActivity() {
     private var mDrawerToggle:ActionBarDrawerToggle? = null
     private var toolbar:Toolbar? = null
     private var address_tv:TextView? = null
+    private var mManager:WifiP2pManager? = null
+    private var mChannel:WifiP2pManager.Channel? = null
+    private var mFilter:IntentFilter? = null
+    private var mWifiDirectReceiver:WifiDirectReceiver? = null
+    private var connected = false
     //申请权限
     private val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.INTERNET,Manifest.permission.ACCESS_WIFI_STATE,Manifest.permission.CHANGE_WIFI_STATE)
     private var serverUtil:ServerUtil? = null
@@ -143,15 +156,104 @@ class MainActivity : AppCompatActivity() {
     }
 
     //获取当前页面
-    fun getVisibleFragment(): Fragment? {
+    private fun getVisibleFragment(): Fragment? {
         val fragments = this@MainActivity.supportFragmentManager.fragments
         return fragments.firstOrNull { it != null && it.isVisible }
     }
 
-    fun doFileAsync(){
-        val wifiDirectService = Intent(this,WifiDirectService::class.java)
-        this.startService(wifiDirectService)
+    //开启wifi direct进行文件同步
+    private fun doFileAsync(){
+        mFilter = IntentFilter()
+        //指示wifi p2p的状态变化
+        mFilter?.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
+        //指示可用节点列表的变化*
+        mFilter?.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
+        //指示连接状态的变化
+        mFilter?.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
+        //指示当前设备发生变化
+        mFilter?.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION)
+
+        //初始化wifi p2p的控制器
+        mManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        mChannel = mManager?.initialize(this, Looper.getMainLooper(),null)
+        //开启设备发现
+        mManager?.discoverPeers(mChannel,object: WifiP2pManager.ActionListener{
+            override fun onFailure(reason: Int) {
+                Log.e("wifip2p","搜索失败-->"+reason)
+            }
+
+            override fun onSuccess() {
+                Log.e("wifip2p","搜索成功")
+            }
+        })
+
+        mWifiDirectReceiver = WifiDirectReceiver(this,mManager!!)
+        registerReceiver(mWifiDirectReceiver,mFilter)
     }
+
+    fun setIsWifiDirectEnable(enabled:Boolean){
+        //设备是否支持Wi-Fi Direct或者打开开关，通知一下
+        if(!enabled){
+
+        }
+    }
+
+    fun getChannel() = mChannel
+
+    fun onConnectDisabled(){
+        connected = false
+    }
+
+    val peerListListener = WifiP2pManager.PeerListListener { peers ->
+        //发现周围设备
+        val config = WifiP2pConfig()
+        if(!peers!!.deviceList.isEmpty()){
+            for(device in peers.deviceList){
+                Log.e("wifip2p",device.toString())
+                config.deviceAddress = device.deviceAddress
+                config.wps.setup = WpsInfo.PBC
+                mManager?.connect(mChannel,config,object:WifiP2pManager.ActionListener{
+                    override fun onFailure(reason: Int) {
+                        Log.e("wifip2p","connect failure->"+reason)
+                    }
+
+                    override fun onSuccess() {
+                        Log.e("wifip2p","connect success")
+                        connected = true
+                    }
+                })
+                if (connected){
+                    break
+                }
+            }
+        }else{
+            Log.e("wifip2p","No devices found")
+        }
+    }
+
+    val connectionInfoListener = WifiP2pManager.ConnectionInfoListener { info ->
+        var address: InetAddress? = null
+        var isGroupOwner = false
+        if (info!!.groupFormed && info.isGroupOwner){
+            Log.i("wifip2p","server")
+            address = info.groupOwnerAddress
+            isGroupOwner = true
+            thread {
+                FileAsyncServer()
+            }.start()
+        }else if(info.groupFormed){
+            Log.i("wifip2p","client")
+            address = info.groupOwnerAddress
+            isGroupOwner = false
+            thread {
+                FileAsyncClient(address)
+            }.start()
+        }
+        if(null != address){
+            connected = true
+        }
+    }
+
 
     /**
      * 服务器控制按钮监听
@@ -185,6 +287,23 @@ class MainActivity : AppCompatActivity() {
                 val dialog = SettingDialogFragment()
                 dialog.show(this.fragmentManager,"SettingDialogFragment")
             }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        //注销广播
+        unregisterReceiver(mWifiDirectReceiver)
+        if (connected){
+            mManager?.removeGroup(mChannel,object:WifiP2pManager.ActionListener{
+                override fun onFailure(reason: Int) {
+                    Log.e("wifip2p","移除失败-->"+reason)
+                }
+
+                override fun onSuccess() {
+                    Log.e("wifip2p","移除成功")
+                }
+            })
         }
     }
 

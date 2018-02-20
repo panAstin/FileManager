@@ -4,10 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.support.v4.content.FileProvider
 import android.util.Log
 import com.example.filemanager.FileBean
+import org.json.JSONObject
 import java.io.*
 
 import java.text.DecimalFormat
@@ -37,6 +37,58 @@ object FileUtil {
             Log.e("获取文件大小", "获取失败!")
         }
         return formetFileSize(blockSize)
+    }
+
+    /**
+     * 获取目录下文件修改时间存入json
+     * @param path 文件路径
+     * @return 文件jsonobject
+     */
+    fun getFiletoJson(path: String):JSONObject{
+        val dict = File(path)
+        val filejson = JSONObject()
+        if (!dict.exists()){
+            dict.mkdir()
+        }
+        for (f in dict.listFiles()){
+            filejson.put(f.name,f.lastModified())
+        }
+        return filejson
+    }
+
+    /**
+     * 根据json获取指定目录下待输出同步文件
+     * @param filePath 文件夹路径
+     * @param jsonObject 已知jsonobject
+     * @return 待同步文件列表
+     */
+    fun getoutAsyncFiles(path: String,jsonObject: JSONObject):ArrayList<File>{
+        val asyncdict = File(path)
+        val asyncfiles = ArrayList<File>()
+        if (!asyncdict.exists()){
+            asyncdict.mkdir()
+        }
+        asyncdict.listFiles().filterTo(asyncfiles) { !jsonObject.has(it.name) or (jsonObject.getLong(it.name) < it.lastModified()) }
+        return asyncfiles
+    }
+
+    /**
+     * 根据json获取指定目录下待获取同步文件
+     * @param filePath 文件夹路径
+     * @param jsonObject 已知jsonobject
+     * @return 待同步文件jsonobject
+     */
+    fun getinAsyncFiles(path: String,jsonObject: JSONObject):JSONObject{
+        val asyncdict = File(path)
+        if (!asyncdict.exists()){
+            asyncdict.mkdir()
+        }
+        for (f in asyncdict.listFiles()){
+            if (jsonObject.has(f.name) and (jsonObject.getLong(f.name) <= f.lastModified())){
+                jsonObject.remove(f.name)
+            }
+        }
+        return jsonObject
     }
 
     /**
@@ -367,24 +419,7 @@ object FileUtil {
     fun readZipfiles(filepath:String):ArrayList<FileBean>{
         val ltag = "readzip"
         val files = ArrayList<FileBean>()
-        val zipfile = ZipFile(filepath)
-        val bis = BufferedInputStream(FileInputStream(filepath))
-        val zin = ZipInputStream(bis)
-        var ze = zin.nextEntry
-        while (ze != null){
-            Log.i(ltag,"file-"+ze.name+":"+ze.size)
-            if(ze.size>0){
-                val br = BufferedReader(InputStreamReader(zipfile.getInputStream(ze)))
-                var line = br.readLine()
-                while (line != null){
-                    Log.i(ltag,line)
-                    line = br.readLine()
-                }
-                br.close()
-            }
-            ze = zin.nextEntry
-        }
-        zin.closeEntry()
+
         return files
     }
 
