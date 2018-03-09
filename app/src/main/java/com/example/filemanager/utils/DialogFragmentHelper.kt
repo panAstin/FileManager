@@ -254,6 +254,16 @@ object DialogFragmentHelper {
         dialogFragment.show(manager, INTERVAL_INSERT_TAG)
     }
 
+    /**
+     * 关闭加载弹窗
+     */
+    fun dismissProgress(fragmentManager: FragmentManager){
+        if(null != fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag())){
+            val pdf:DialogFragment? = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
+            pdf?.dismiss()
+        }
+    }
+
 }
 
 

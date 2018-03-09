@@ -7,13 +7,13 @@ import android.os.Build
 import android.support.v4.content.FileProvider
 import android.util.Log
 import com.example.filemanager.FileBean
+import com.example.filemanager.FileType
 import org.json.JSONObject
 import java.io.*
 
 import java.text.DecimalFormat
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 object FileUtil {
@@ -222,6 +222,22 @@ object FileUtil {
         val folder = File(folderPath)
         if (!folder.exists()) {
             folder.mkdir()
+        }
+    }
+
+    /**
+     * 获取文件MIMETYPE
+     * @param file 文件
+     */
+    fun getType(file: File): FileType? {
+        return when(FileBean(file).getTypeID()){
+            2 -> FileType.text
+            3 -> FileType.music
+            4 -> FileType.video
+            5 -> FileType.zip
+            6 -> FileType.apk
+            7 -> FileType.photo
+            else -> null
         }
     }
 

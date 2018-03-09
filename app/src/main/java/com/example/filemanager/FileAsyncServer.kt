@@ -1,7 +1,6 @@
 package com.example.filemanager
 
 import android.util.Log
-import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress

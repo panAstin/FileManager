@@ -38,6 +38,7 @@ class FileListFragment : Fragment() {
     private var fmadapter: fmAdapter? = null
     private var mactivity: MainActivity? = null
     private var cacheThreadPool = Executors.newCachedThreadPool()           //线程池
+    val msg = Message()    //消息
 
     companion object {
         var selectedFiles: ArrayList<FileBean>? = null        //被选中的文件
@@ -73,7 +74,6 @@ class FileListFragment : Fragment() {
         val menuItemS = menu.findItem(R.id.search)
         val menuItemD = menu.findItem(R.id.delete)
         val menuItemA = menu.findItem(R.id.selectAll)
-        val menuItemZ = menu.findItem(R.id.unzip)
         val searchView = menuItemS.actionView as android.support.v7.widget.SearchView
         //设置搜索的事件
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener, android.support.v7.widget.SearchView.OnQueryTextListener {
@@ -105,18 +105,15 @@ class FileListFragment : Fragment() {
                              }
                              if(isFinished){  //正常结束
                                  mFiles = result
-                                 val msg = Message()
                                  msg.arg1 = 1
-                                 handler.sendMessage(msg)   //传递结果集
+
                                  SEARCH_SWITCH = 1
                              }
                          } catch(e:Exception) {
                              e.printStackTrace()
+                             msg.arg1 = -1
                          } finally {
-                             if(null != fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag())){
-                                 val pdf:DialogFragment? = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
-                                 pdf?.dismiss()
-                             }
+                             handler.sendMessage(msg)   //传递结果集
                          }
                      }
                 }
@@ -158,25 +155,6 @@ class FileListFragment : Fragment() {
                     },true,null)
             true
         })
-        menuItemZ.setOnMenuItemClickListener({
-            when(selectFlag){
-                2 -> {
-                    val filebean = getSelectedFiles()[0]
-                    if(FileUtil.unzipFile(filebean!!.getFile().path,currentpath)){
-                        showFileDir(currentpath)
-                        displaySnackbar("解压完成")
-                    }else{
-                        displaySnackbar("解压失败")
-                    }
-                    selectFlag = 0
-                }
-                3 -> {
-                    showFileDir(ROOT_PATH)
-                    selectFlag = 2
-                }
-            }
-            true
-        })
         menuItemA.setOnMenuItemClickListener({
             selectAll()
             mactivity?.invalidateOptionsMenu()
@@ -187,25 +165,17 @@ class FileListFragment : Fragment() {
                 menuItemS.isVisible = true
                 menuItemD.isVisible = false
                 menuItemA.isVisible = false
-                menuItemZ.isVisible = false
             }
             1 -> {
                 menuItemS.isVisible = false
                 menuItemD.isVisible = true
                 menuItemA.isVisible = true
-                menuItemZ.isVisible = false
                 menu.add(Menu.NONE, Menu.FIRST + 4, 4, "复制")
                 menu.add(Menu.NONE, Menu.FIRST + 5, 6, "重命名")
                 menu.add(Menu.NONE, Menu.FIRST + 6, 8, "压缩")
                 if (fmadapter!!.getSelectCount() > 1) {
                     menu.findItem(Menu.FIRST + 5).isEnabled = false
                 }
-            }
-            2 or 3 -> {
-                menuItemS.isVisible = false
-                menuItemD.isVisible = false
-                menuItemA.isVisible = false
-                menuItemZ.isVisible = true
             }
         }
         menu.add(Menu.NONE, Menu.FIRST + 1, 7, "新建文件夹")
@@ -244,17 +214,15 @@ class FileListFragment : Fragment() {
                         try {
                             val targetpath = currentpath + "/" + selectfile.getFile().name
                             FileUtil.copy(selectfile.getFile().path, targetpath)
-                            fmadapter!!.addItem(FileBean(File(targetpath)))
-                            if(MediaUtil.isMediaFile(targetpath)){
-                                MediaUtil.sendScanFileBroadcast(context,targetpath)
-                            }
+                            msg.arg1 = 2
+                            val bundle = Bundle()
+                            bundle.putString("path",targetpath)
+                            msg.data = bundle
                         } catch (e: Exception) {
                             e.printStackTrace()
-                            displaySnackbar("粘贴失败")
+                            msg.arg1 = -1
                         } finally {
-                            val pdf = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
-                            pdf.dismiss()
-                            displaySnackbar("粘贴成功")
+                            handler.sendMessage(msg)
                         }
                     }
                 })
@@ -380,10 +348,47 @@ class FileListFragment : Fragment() {
                     val path = mFiles!![viewHolder.adapterPosition].getFile().path
                     val file = File(path)
                     if (file.exists() && file.canRead()) {            // 文件存在并可读
-                        if (file.isDirectory) {
-                            showFileDir(path)                      //显示子目录及文件
-                        } else {
-                            FileUtil.openFile(context, file)               //打开文件
+                        when {
+                            file.isDirectory -> showFileDir(path)                      //显示子目录及文件
+                            FileUtil.getType(file) == FileType.zip -> //压缩文件，解压到当前目录
+                                DialogFragmentHelper.showConfirmDialog(fragmentManager,
+                                        "是否解压文件到当前目录？",object :IDialogResultListener<Int>{
+                                    override fun onDataResult(result: Int) {
+                                        if (-1 == result){
+                                            //显示ProgressDialog
+                                            DialogFragmentHelper.showProgress(fragmentManager,"正在解压...",
+                                                    true,object :CommonDialogFragment.OnDialogCancelListener{
+                                                override fun onCancel() {
+                                                    try {
+                                                        displaySnackbar("解压已中断！")
+                                                    } catch (e:Exception){
+                                                        e.printStackTrace()
+                                                    }
+                                                }
+                                            })
+                                            val mthread = Thread(Runnable {
+                                                //需要花时间的方法
+                                                try {
+                                                    val targetpath = currentpath + File.separator + file.name
+                                                    if(FileUtil.unzipFile(file.path,targetpath)){
+                                                        msg.arg1 = 3
+                                                    }else{
+                                                        msg.arg1 = -1
+                                                    }
+                                                } catch (e: Exception) {
+                                                    e.printStackTrace()
+                                                    msg.arg1 = -1
+                                                } finally {
+                                                    handler.sendMessage(msg)
+                                                }
+                                            })
+                                            mthread.start()
+                                        }else{
+                                            displaySnackbar("操作取消")
+                                        }
+                                    }
+                                },true,null)
+                            else -> FileUtil.openFile(context, file)               //打开文件
                         }
                     } else {   //没有权限
                         DialogFragmentHelper.showTips(fragmentManager,"没有权限!")
@@ -534,16 +539,36 @@ class FileListFragment : Fragment() {
             val pdf = fragmentManager.findFragmentByTag(DialogFragmentHelper.getProgressTag()) as DialogFragment
             pdf.dismiss()
             //更新UI
-            if(msg.arg1 == 1){
-                fmadapter?.setListData(mFiles!!)
+            when {
+                msg.arg1 == -1 -> {
+                    displaySnackbar("操作出错")
+                }
+                msg.arg1 == 1 -> {
+                    fmadapter?.setListData(mFiles!!)
+
+                    patharea!!.visibility = View.GONE
+                    pathtxt!!.visibility = View.VISIBLE
+                    if (fmadapter!!.itemCount == 0) {
+                        pathtxt!!.text = "无对应文件"
+                    } else {
+                        pathtxt!!.text=String.format(resources.getString(R.string.result_cout),mFiles?.size)
+                    }
+                }
+                msg.arg1 == 2 -> {
+                    val targetpath = msg.data.getString("path")
+                    fmadapter!!.addItem(FileBean(File(targetpath)).getInitailed(context))
+
+                    if(MediaUtil.isMediaFile(targetpath)){
+                        MediaUtil.sendScanFileBroadcast(context,targetpath)
+                    }
+                    displaySnackbar("粘贴成功")
+                }
+                msg.arg1 == 3 -> {
+                    showFileDir(currentpath)
+                    displaySnackbar("解压完成")
+                }
             }
-            patharea!!.visibility = View.GONE
-            pathtxt!!.visibility = View.VISIBLE
-            if (fmadapter!!.itemCount == 0) {
-                pathtxt!!.text = "无对应文件"
-            } else {
-                pathtxt!!.text=String.format(resources.getString(R.string.result_cout),mFiles?.size)
-            }
+
         }
     }
 

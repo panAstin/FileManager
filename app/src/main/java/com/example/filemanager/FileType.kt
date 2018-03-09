@@ -15,12 +15,8 @@ enum class FileType {
 
     companion object {
         fun getFileTypeByOrdinal(ordinal: Int): FileType {
-            for (type in values()) {
-                if (type.ordinal == ordinal) {
-                    return type
-                }
-            }
-            return text
+            return values().firstOrNull { it.ordinal == ordinal }
+                    ?: text
         }
     }
 }
