@@ -30,7 +30,6 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import com.example.filemanager.FileAsyncClient
-import com.example.filemanager.FileAsyncServer
 import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.R
 import com.example.filemanager.fragments.FileListFragment
@@ -239,7 +238,7 @@ class MainActivity : AppCompatActivity() {
             address = info.groupOwnerAddress
             isGroupOwner = true
             thread {
-                FileAsyncServer()
+
             }.start()
         }else if(info.groupFormed){
             Log.i("wifip2p","client")
@@ -253,7 +252,6 @@ class MainActivity : AppCompatActivity() {
             connected = true
         }
     }
-
 
     /**
      * 服务器控制按钮监听
@@ -293,17 +291,19 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         //注销广播
-        unregisterReceiver(mWifiDirectReceiver)
-        if (connected){
-            mManager?.removeGroup(mChannel,object:WifiP2pManager.ActionListener{
-                override fun onFailure(reason: Int) {
-                    Log.e("wifip2p","移除失败-->"+reason)
-                }
+        if(mWifiDirectReceiver != null) {
+            unregisterReceiver(mWifiDirectReceiver)
+            if (connected) {
+                mManager?.removeGroup(mChannel, object : WifiP2pManager.ActionListener {
+                    override fun onFailure(reason: Int) {
+                        Log.e("wifip2p", "移除失败-->" + reason)
+                    }
 
-                override fun onSuccess() {
-                    Log.e("wifip2p","移除成功")
-                }
-            })
+                    override fun onSuccess() {
+                        Log.e("wifip2p", "移除成功")
+                    }
+                })
+            }
         }
     }
 

@@ -1,6 +1,5 @@
 package com.example.filemanager.response
 
-import android.os.Environment
 import android.util.Log
 import com.example.filemanager.utils.FileUtil
 import java.io.File
@@ -11,10 +10,9 @@ import java.net.URLDecoder
  * 文件下载handler
  */
 class RequestDownloadHandler{
-    private val ROOT_PATH = Environment.getExternalStorageDirectory().path    //根目录
-    fun download(params:Map<String,String>,agent:String):String? {
+    fun download(params:Map<String,String>):String? {
         Log.i("Andserver","Params"+params.toString())
-        val path = ROOT_PATH + URLDecoder.decode(params["path"],"utf-8")
+        val path = FileUtil.ROOT_PATH + URLDecoder.decode(params["path"],"utf-8")
         val fnames = URLDecoder.decode(params["filenames"],"utf-8")
         val fnamelist:List<String> = fnames.split("/")
         val zipName = fnamelist[0] + "等文件打包.zip"

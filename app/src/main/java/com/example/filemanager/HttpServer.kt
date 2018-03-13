@@ -3,6 +3,7 @@ package com.example.filemanager
 import android.content.res.AssetManager
 import android.os.Environment
 import android.util.Log
+import com.example.filemanager.response.RequestControlHandler
 import com.example.filemanager.response.RequestDownloadHandler
 import com.example.filemanager.response.RequestListfileHandler
 import com.example.filemanager.response.RequestUploadHandler
@@ -61,13 +62,14 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                     }
                 }
                 "upload" ->{    //文件上传
+                    val ja = JSONObject()
                     if(RequestUploadHandler(mode).upload(session!!.parms,files)){
-                        val ja = JSONObject()
                         ja.put("message","Success")
-                        return Response(Response.Status.OK, MIME_JSON,ja.toString())
                     }else{
+                        ja.put("message","Fail")
                         throw IOException("上传出错")
                     }
+                    return Response(Response.Status.OK, MIME_JSON,ja.toString())
                 }
                 "openfile" -> {
                     val file = File(Environment.getExternalStorageDirectory().path + filepath)
@@ -80,7 +82,7 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                     }
                 }
                 "download" -> {   //文件下载
-                    val path = RequestDownloadHandler().download(session!!.parms,agent)
+                    val path = RequestDownloadHandler().download(session!!.parms)
                     if(path != null){
                         val response = Response(Response.Status.OK,"multipart/form-data", File(path).inputStream())
                         response.addHeader("Content-disposition", String.format("attachment; filename=\"%s\"", File(path).name))
@@ -89,6 +91,26 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                     }else{
                         throw FileNotFoundException("下载出错")
                     }
+                }
+
+                "delete" -> {  //文件删除
+                    val ja = JSONObject()
+                    if(RequestControlHandler().delete(session!!.parms)){
+                        ja.put("result","Success")
+                    }else{
+                        ja.put("result","Fail")
+                    }
+                    return Response(Response.Status.OK, MIME_JSON,ja.toString())
+                }
+
+                "rename" -> {  //重命名
+                    val ja = JSONObject()
+                    if(RequestControlHandler().rename(session!!.parms)){
+                        ja.put("result","Success")
+                    }else{
+                        ja.put("result","Fail")
+                    }
+                    return Response(Response.Status.OK, MIME_JSON,ja.toString())
                 }
 
                 "" -> {          //主页

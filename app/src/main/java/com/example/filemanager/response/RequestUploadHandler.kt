@@ -1,6 +1,5 @@
 package com.example.filemanager.response
 
-import android.os.Environment
 import android.util.Log
 import com.example.filemanager.utils.FileUtil
 import java.io.File
@@ -10,21 +9,20 @@ import java.io.File
  * 文件上传Handler
  */
 class RequestUploadHandler(var mode: Int){
-    private val ROOT_PATH = Environment.getExternalStorageDirectory().path    //根目录
     fun upload(params:Map<String,String>,files:Map<String,String>):Boolean {
         val uploadpath = params["path"]
         var targetFilepath = when (mode) {
             0 -> {
-                ROOT_PATH + "/Download"
+                FileUtil.ROOT_PATH + "/Download"
             }
             else -> {
-                ROOT_PATH + uploadpath
+                FileUtil.ROOT_PATH + uploadpath
             }
         }
         for (entry in params.entries) {
             val paramKey = entry.key
             Log.i("file", paramKey)
-            if (paramKey == "file") {
+            if (paramKey == "uploadfile") {
                 Log.i("file", entry.value)
                 val tempFilepath = files[paramKey]
                 Log.i("file", tempFilepath)

@@ -9,6 +9,7 @@ import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.ArrayMap
+import android.util.Log
 import android.view.*
 import android.widget.SearchView
 import android.widget.TextView
@@ -27,9 +28,8 @@ import kotlin.collections.ArrayList
  * 文件列表
  */
 class FileListFragment : Fragment() {
-    private val ROOT_PATH = Environment.getExternalStorageDirectory().path        //根目录
     private var mFiles: ArrayList<FileBean>? = null     //存储文件信息
-    private var currentpath = ROOT_PATH        //当前文件路径
+    private var currentpath = FileUtil.ROOT_PATH        //当前文件路径
     private var mRecyclerView: RecyclerView? = null
     private var patharea: RecyclerView? = null
     private var pathtxt:TextView? = null
@@ -38,7 +38,7 @@ class FileListFragment : Fragment() {
     private var fmadapter: fmAdapter? = null
     private var mactivity: MainActivity? = null
     private var cacheThreadPool = Executors.newCachedThreadPool()           //线程池
-    val msg = Message()    //消息
+    var msg = Message()    //消息
 
     companion object {
         var selectedFiles: ArrayList<FileBean>? = null        //被选中的文件
@@ -114,6 +114,7 @@ class FileListFragment : Fragment() {
                              msg.arg1 = -1
                          } finally {
                              handler.sendMessage(msg)   //传递结果集
+                             msg = Message()
                          }
                      }
                 }
@@ -223,6 +224,7 @@ class FileListFragment : Fragment() {
                             msg.arg1 = -1
                         } finally {
                             handler.sendMessage(msg)
+                            msg = Message()
                         }
                     }
                 })
@@ -319,7 +321,7 @@ class FileListFragment : Fragment() {
 
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder?) {
                 var i = 1
-                var topath = ROOT_PATH
+                var topath = FileUtil.ROOT_PATH
                 //点击的根据路径项得到跳转路径
                 while (i <= viewHolder!!.adapterPosition) {
                     topath += "/" + Pathnotes[i]
@@ -345,6 +347,7 @@ class FileListFragment : Fragment() {
                     fmadapter!!.notifyDataSetChanged()
                     mactivity?.invalidateOptionsMenu()
                 } else {
+                    Log.i("click",viewHolder.adapterPosition.toString())
                     val path = mFiles!![viewHolder.adapterPosition].getFile().path
                     val file = File(path)
                     if (file.exists() && file.canRead()) {            // 文件存在并可读
@@ -369,7 +372,7 @@ class FileListFragment : Fragment() {
                                             val mthread = Thread(Runnable {
                                                 //需要花时间的方法
                                                 try {
-                                                    val targetpath = currentpath + File.separator + file.name
+                                                    val targetpath = currentpath + File.separator + file.nameWithoutExtension
                                                     if(FileUtil.unzipFile(file.path,targetpath)){
                                                         msg.arg1 = 3
                                                     }else{
@@ -380,6 +383,7 @@ class FileListFragment : Fragment() {
                                                     msg.arg1 = -1
                                                 } finally {
                                                     handler.sendMessage(msg)
+                                                    msg = Message()
                                                 }
                                             })
                                             mthread.start()
@@ -402,7 +406,7 @@ class FileListFragment : Fragment() {
         })
         fmadapter = fmAdapter(context)
         mRecyclerView?.adapter = fmadapter           //设置adapter
-        showFileDir(ROOT_PATH)
+        showFileDir(FileUtil.ROOT_PATH)
     }
 
     /**
@@ -579,7 +583,7 @@ class FileListFragment : Fragment() {
         if(selectFlag == 1){          //退出选择模式
             changeSelecFlag(null)
             return true
-        } else if (currentpath!=ROOT_PATH){    //返回上级目录
+        } else if (currentpath!=FileUtil.ROOT_PATH){    //返回上级目录
             val file = File(currentpath)
             showFileDir(file.parent)
             return true

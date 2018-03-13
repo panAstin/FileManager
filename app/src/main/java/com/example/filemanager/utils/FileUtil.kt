@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.support.v4.content.FileProvider
 import android.util.Log
 import com.example.filemanager.FileBean
@@ -17,6 +18,7 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
 object FileUtil {
+    val ROOT_PATH = Environment.getExternalStorageDirectory().path    //根目录
     /**
      * 调用此方法自动计算指定文件或指定文件夹的大小
      * @param filePath 文件路径
@@ -181,17 +183,21 @@ object FileUtil {
      * @param context
      * @param file 文件
      */
-    fun deleteFile(context: Context,file: File):Boolean{
+    fun deleteFile(context: Context?,file: File):Boolean{
         if(file.isDirectory){  //文件夹
             val files = file.listFiles()
-            for (mfile in files){
-                deleteFile(context,mfile)
+            if(context != null){
+                for (mfile in files){
+                    deleteFile(context,mfile)
+                }
             }
             return file.delete()
         }
         if (file.isFile){
             FileSortUtil.deleteFile(file)
-            MediaUtil.removeMediaFromLib(context, file.path)       //从多媒体库中移除
+            if(context != null){
+                MediaUtil.removeMediaFromLib(context, file.path)       //从多媒体库中移除
+            }
             file.delete()
             return !file.exists()
         }
@@ -204,9 +210,9 @@ object FileUtil {
      * @param oldfile 原文件
      * @param newfile 重命名后文件
      */
-    fun renameFile(context: Context,oldfile: File,newfile:File):Boolean{
+    fun renameFile(context: Context?,oldfile: File,newfile:File):Boolean{
         if(oldfile.renameTo(newfile)){
-            if (MediaUtil.isMediaFile(newfile.path)){
+            if (MediaUtil.isMediaFile(newfile.path)&&context!=null){
                 MediaUtil.renameMediaFile(context, oldfile.path, newfile.path)  //修改多媒体库中文件名
             }
             return true
@@ -484,6 +490,10 @@ object FileUtil {
      * @param targetDir 解压目标目录
      */
     fun unzipFile(zipFilePath:String,targetDir:String):Boolean{
+        val targetDirFile = File(targetDir)
+        if(!targetDirFile.exists()){
+            targetDirFile.mkdirs()
+        }
         val ltag = "unzip"
         val zfile:ZipFile
         try {// 转码为GBK格式，支持中文

@@ -1,6 +1,5 @@
 package com.example.filemanager.response
 
-import android.os.Environment
 import android.util.Log
 import com.example.filemanager.FileBean
 import com.example.filemanager.FileType
@@ -16,11 +15,10 @@ import java.net.URLDecoder
  * 列出文件handler
  */
 class RequestListfileHandler{
-    private val ROOT_PATH = Environment.getExternalStorageDirectory().path    //根目录
     fun listFiles(params:Map<String,String>):JSONArray? {
         Log.i("Nanoserver","Params"+params.toString())
 
-        val path = ROOT_PATH + URLDecoder.decode(params["path"],"utf-8")
+        val path = FileUtil.ROOT_PATH + URLDecoder.decode(params["path"],"utf-8")
         val key = URLDecoder.decode(params["key"],"utf-8")
         val type = URLDecoder.decode(params["sort"],"utf-8")
         if(key=="" && type=="") {
@@ -65,7 +63,7 @@ class RequestListfileHandler{
                     val jsonobj = JSONObject()
                     jsonobj.put("name",it.name)
                     jsonobj.put("type",fb.getTypeID().toString())
-                    jsonobj.put("path",it.path.replace(ROOT_PATH,""))
+                    jsonobj.put("path",it.path.replace(FileUtil.ROOT_PATH,""))
                     js.put(jsonobj)
                 }
         return js
@@ -76,7 +74,7 @@ class RequestListfileHandler{
             val jsonobj = JSONObject()
             jsonobj.put("name",fb.getFile().name)
             jsonobj.put("type",fb.getTypeID().toString())
-            jsonobj.put("path",fb.getFile().path.replace(ROOT_PATH,""))
+            jsonobj.put("path",fb.getFile().path.replace(FileUtil.ROOT_PATH,""))
             js.put(jsonobj)
         }
         return js
