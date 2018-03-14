@@ -9,7 +9,7 @@ import android.util.LruCache
  * 内存缓存
  */
 class MemoryCacheUtils {
-    private var mMemoryCache: LruCache<Int, Bitmap>? = null  //缓存
+    private var mMemoryCache: LruCache<Any, Any>? = null  //缓存
 
     /**
      * 初始化
@@ -32,6 +32,22 @@ class MemoryCacheUtils {
      */
     fun setBitmapToMemory(id: Int,bitmap: Bitmap){
         mMemoryCache?.put(id,bitmap)
+        Log.i("mmmm","put")
+    }
+
+    /**
+     * 从内存中获取滚动条位置
+     * @param String 路径
+     */
+    fun getPositionFromMemory(path:String) = mMemoryCache?.get(path) //从内存读图片
+
+    /**
+     * 将滚动条存入内存
+     * @param String 标识
+     * @param Int 位置
+     */
+    fun setPositionToMemory(path: String,positiono:Int){
+        mMemoryCache?.put(path,positiono)
         Log.i("mmmm","put")
     }
 }

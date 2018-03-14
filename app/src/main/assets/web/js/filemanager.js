@@ -251,17 +251,40 @@ var fileamount = 0; //总文件数量
         
     }
 
-    //重命名
-    function rename(){
+    //重命名弹窗
+    function showrename(){
+        var alertdiv = $("<div></div>").addClass("alert alert-warning");
         if(sfiles.size>1){
             //选中文件大于一
+            alertdiv.html("选中文件过多"); 
         }else if(sfiles.empty()){
             //未选中文件
-            alert("请选择要重命名的文件!");
+            alertdiv.html("请先选择文件"); 
         }else{
-            //进行重命名
-
+            $("#fileModalLabel").text("重命名");
+            $("#fmodalbody").empty();
+            var formgroup = $("<div></div>").addClass("form-group");
+            var inputname = $("<input>").addClass("form-control").attr({"type":"text","id":"newname","placeholder":sfiles[0]});
+            var renamebtn = $("<button></button>").addClass("btn btn-default").attr("onclick","rename()").html("确定");
+            formgroup.append(inputname);
+            formgroup.append(renamebtn);
+            $("#fmodalbody").append(formgroup);
+            $("#fileModal").modal('show');
         }
+    }
+
+    //重命名
+    function rename(){
+        //进行重命名
+        var cpath = "";
+        $.each(currentpath,function(index,value){
+            cpath += value + "/";
+        });
+        var inputname = $("#newname").val();
+        xmlhttp=$.ajax({type:"POST",url:"renamefile",data:{path:cpath,oldname:sfiles[0],newname:inputname},async:true,success:function(){
+            refreshFile();
+            }
+        });    
     }
 
     //删除文件

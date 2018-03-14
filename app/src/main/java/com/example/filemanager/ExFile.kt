@@ -13,7 +13,7 @@ import java.util.*
  * Created by 11046 on 2017/9/27.
  * 封装文件与文件大小、文件图标
  */
-class FileBean(private var file: File) {
+class ExFile(path:String): File(path) {
     companion object {
         private var iconCache:MemoryCacheUtils? = null        //图片缓存
 
@@ -32,8 +32,8 @@ class FileBean(private var file: File) {
     private val Icons = arrayOf(R.drawable.dict,R.drawable.file,R.drawable.doc,  R.drawable.music, R.drawable.video, R.drawable.zip, R.drawable.apk)
     private val txttypes = arrayOf("text/plain", "application/msword", "application/pdf", "application/vnd.ms-powerpoint", "application/vnd.ms-excel") //文档类型
 
-    fun setDate(){
-        this.date = format.format(Date(file.lastModified()))
+    fun initDate(){
+        this.date = format.format(Date(this.lastModified()))
     }
 
     fun setSize(size:String){
@@ -52,13 +52,12 @@ class FileBean(private var file: File) {
 
     fun getIcon(): Bitmap? = icon
 
-    fun getFile():File = file
 
-    private fun initType(file: File){
-        val type = FileUtil.getMIMEType(file)
+    private fun initType(){
+        val type = FileUtil.getMIMEType(this)
         typeID=when{
-            file.isDirectory ->0
-            file.isFile -> when {
+            this.isDirectory ->0
+            this.isFile -> when {
                 txttypes.contains(type) -> 2
                 type.contains("audio") or (type == "application/ogg") -> 3
                 type.contains("video") -> 4
@@ -75,7 +74,7 @@ class FileBean(private var file: File) {
             if (typeID<7) {
                 val iconincache = getCache().getBitmapFromMemory(typeID)
                 icon = if(iconincache!=null){
-                    iconincache
+                    iconincache as Bitmap
                 }else{
                     val iconbitmap = BitmapFactory.decodeResource(context.resources, Icons[typeID])
                     getCache().setBitmapToMemory(typeID,iconbitmap)
@@ -84,16 +83,16 @@ class FileBean(private var file: File) {
         }
     }
 
-    fun getInitailed(context:Context):FileBean{
+    fun getInitailed(context:Context):ExFile{
         this.initIcon(context)
-        this.setSize(FileUtil.getAutoFileOrFilesSize(this.file.path))
+        this.setSize(FileUtil.getAutoFileOrFilesSize(this.path))
         return this
     }
 
     init {
-        this.date = format.format(Date(file.lastModified()))
+        this.initDate()
         this.size = "计算中.."
-        initType(file)
+        initType()
     }
 
 }

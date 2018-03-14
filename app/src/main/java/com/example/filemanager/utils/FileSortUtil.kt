@@ -8,7 +8,7 @@ import android.os.Handler
 import android.provider.MediaStore
 import android.util.ArrayMap
 import android.util.Log
-import com.example.filemanager.FileBean
+import com.example.filemanager.ExFile
 import com.example.filemanager.FileType
 import java.io.File
 
@@ -21,22 +21,22 @@ import java.io.File
 class FileSortUtil{
     private var mContentResolver: ContentResolver? = null
     companion object {
-        val mAllFiles = ArrayMap<FileType,ArrayList<FileBean>>()
+        val mAllFiles = ArrayMap<FileType,ArrayList<ExFile>>()
 
         //删除
         fun deleteFile(file:File){
-            val filebean = FileBean(file)
+            val exFile = ExFile(file.path)
             if (file.parent == Environment.getExternalStorageDirectory().path+"/Download" ){
                 var i=0
                 while(i<mAllFiles[FileType.download]!!.size) {
-                    if(filebean.getFile() == mAllFiles[FileType.download]!![i].getFile()){
+                    if(exFile == mAllFiles[FileType.download]!![i]){
                         mAllFiles[FileType.download]!!.removeAt(i)
                         break
                     }
                     i++
                 }
             }
-            val type = when(filebean.getTypeID()){
+            val type = when(exFile.getTypeID()){
                 2 -> FileType.text
                 3 -> FileType.music
                 4 -> FileType.video
@@ -48,7 +48,7 @@ class FileSortUtil{
             if (type != null){
                 var i=0
                 while(i<mAllFiles[type]!!.size) {
-                    if(filebean.getFile() == mAllFiles[type]!![i].getFile()){
+                    if(exFile == mAllFiles[type]!![i]){
                         mAllFiles[type]!!.removeAt(i)
                         break
                     }
@@ -63,8 +63,8 @@ class FileSortUtil{
      * @param type 文件类型
      * @param fileBean 文件
      */
-    fun addFileByType(type: FileType?, fileBean: FileBean?) {
-        if (type == null || fileBean == null) {
+    fun addFileByType(type: FileType?, exFile: ExFile?) {
+        if (type == null || exFile == null) {
             return
         }
         var fileBeans = mAllFiles[type]
@@ -73,7 +73,7 @@ class FileSortUtil{
             fileBeans = ArrayList()
             mAllFiles.put(type, fileBeans)
         }
-        fileBeans.add(fileBean)
+        fileBeans.add(exFile)
     }
 
     /**
@@ -81,17 +81,17 @@ class FileSortUtil{
      * @param type 文件类型
      * @param fileBean 文件集合
      */
-     private fun addFilesByType(type: FileType?, fileBean: ArrayList<FileBean>?) {
+     private fun addFilesByType(type: FileType?, fileBean: ArrayList<ExFile>?) {
         if (type == null || fileBean == null) {
             return
         }
-        var fileBeans = mAllFiles[type]
+        var exFile = mAllFiles[type]
 
-        if (fileBeans == null) {
-            fileBeans = ArrayList()
-            mAllFiles.put(type, fileBeans)
+        if (exFile == null) {
+            exFile = ArrayList()
+            mAllFiles[type] = exFile
         }
-         fileBeans.addAll(fileBean)
+        exFile.addAll(fileBean)
     }
 
     /**
@@ -99,7 +99,7 @@ class FileSortUtil{
      * @param fileType 文件类型
      * @return 文件集合
      */
-    fun getFilesByType(fileType: FileType?): ArrayList<FileBean>? {
+    fun getFilesByType(fileType: FileType?): ArrayList<ExFile>? {
         return if (fileType == null) {
             null
         } else mAllFiles[fileType]
@@ -122,16 +122,16 @@ class FileSortUtil{
      * 获取图片类型文件
      */
     private //projection 是定义返回的数据，selection 通常的sql 语句，例如  selection=MediaStore.Images.ImageColumns.MIME_TYPE+"=? " 那么 selectionArgs=new String[]{"jpg"};
-    val allPhoto: ArrayList<FileBean>
+    val allPhoto: ArrayList<ExFile>
         get() {
-            val photos = ArrayList<FileBean>()
+            val photos = ArrayList<ExFile>()
             val projection = arrayOf(MediaStore.Images.ImageColumns.DATA, MediaStore.Images.ImageColumns.DISPLAY_NAME)
             val cursor = mContentResolver!!.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection, null, null, MediaStore.Images.ImageColumns.DATE_MODIFIED + "  desc")
             var filePath: String
             while (cursor!!.moveToNext()) {
                 filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA))
                 if (!File(filePath).isHidden){
-                    photos.add(FileBean(File(filePath)))
+                    photos.add(ExFile(filePath))
                 }
             }
             cursor.close()
@@ -141,16 +141,16 @@ class FileSortUtil{
     /**
      * 获取音乐类型文件
      */
-    private val allMusic: ArrayList<FileBean>
+    private val allMusic: ArrayList<ExFile>
         get() {
-            val musics = ArrayList<FileBean>()
+            val musics = ArrayList<ExFile>()
             val projection = arrayOf(MediaStore.Audio.AudioColumns.DATA, MediaStore.Audio.AudioColumns.DISPLAY_NAME)
             val cursor = mContentResolver!!.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, null, null, MediaStore.Audio.AudioColumns.DATE_MODIFIED + " desc")
             var filePath: String
             while (cursor!!.moveToNext()) {
                 filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.AudioColumns.DATA))
                 if (!File(filePath).isHidden){
-                    musics.add(FileBean(File(filePath)))
+                    musics.add(ExFile(filePath))
                 }
             }
             cursor.close()
@@ -160,29 +160,29 @@ class FileSortUtil{
     /**
      * 获取下载文件夹中文件
      */
-    private val allDownload: ArrayList<FileBean>
+    private val allDownload: ArrayList<ExFile>
         get() {
-            val downloads = ArrayList<FileBean>()
+            val downloads = ArrayList<ExFile>()
             val files = File(Environment.getExternalStorageDirectory().path+"/Download" ).listFiles()
             files
                     .filterNot { it.isHidden }
-                    .mapTo(downloads) { FileBean(it) }
+                    .mapTo(downloads) { ExFile(it.path) }
             return downloads
         }
 
     /**
      * 获取视频类型文件
      */
-    private val allVideo: ArrayList<FileBean>
+    private val allVideo: ArrayList<ExFile>
         get() {
-            val videos = ArrayList<FileBean>()
+            val videos = ArrayList<ExFile>()
             val projection = arrayOf(MediaStore.Video.VideoColumns.DATA, MediaStore.Video.VideoColumns.DISPLAY_NAME)
             val cursor = mContentResolver!!.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, MediaStore.Video.VideoColumns.DATE_MODIFIED + " desc")
             var filePath: String
             while (cursor!!.moveToNext()) {
                 filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Video.VideoColumns.DATA))
                 if (!File(filePath).isHidden){
-                    videos.add(FileBean(File(filePath)))
+                    videos.add(ExFile(filePath))
                 }
             }
             cursor.close()
@@ -192,9 +192,9 @@ class FileSortUtil{
     /**
      * 获取文本类型文件
      */
-    private val allText: ArrayList<FileBean>
+    private val allText: ArrayList<ExFile>
         get() {
-            val texts = ArrayList<FileBean>()
+            val texts = ArrayList<ExFile>()
             val projection = arrayOf(MediaStore.Files.FileColumns.DATA, MediaStore.Files.FileColumns.TITLE, MediaStore.Files.FileColumns.MIME_TYPE)
             val selection = (MediaStore.Files.FileColumns.MIME_TYPE + "= ? "
                     + " or " + MediaStore.Files.FileColumns.MIME_TYPE + " = ? "
@@ -207,7 +207,7 @@ class FileSortUtil{
             while (cursor!!.moveToNext()) {
                 filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA))
                 if (!File(filePath).isHidden){
-                    texts.add(FileBean(File(filePath)))
+                    texts.add(ExFile(filePath))
                 }
             }
             cursor.close()
@@ -217,9 +217,9 @@ class FileSortUtil{
     /**
      * 获取压缩包类型文件
      */
-    private val allZip: ArrayList<FileBean>
+    private val allZip: ArrayList<ExFile>
         get() {
-            val zips = ArrayList<FileBean>()
+            val zips = ArrayList<ExFile>()
             val projection = arrayOf(MediaStore.Files.FileColumns.DATA, MediaStore.Files.FileColumns.TITLE)
             val selection = MediaStore.Files.FileColumns.MIME_TYPE + "= ? "
             val selectionArgs = arrayOf("application/zip")
@@ -228,7 +228,7 @@ class FileSortUtil{
             while (cursor!!.moveToNext()) {
                 filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA))
                 if (!File(filePath).isHidden){
-                    zips.add(FileBean(File(filePath)))
+                    zips.add(ExFile(filePath))
                 }
             }
             cursor.close()
@@ -238,9 +238,9 @@ class FileSortUtil{
     /**
      * 获取安装包类型文件
      */
-    private val allApk: ArrayList<FileBean>
+    private val allApk: ArrayList<ExFile>
         get() {
-            val apks = ArrayList<FileBean>()
+            val apks = ArrayList<ExFile>()
             val projection = arrayOf(MediaStore.Files.FileColumns.DATA, MediaStore.Files.FileColumns.TITLE)
             val selection = MediaStore.Files.FileColumns.MIME_TYPE + "= ? "
             val selectionArgs = arrayOf("application/vnd.android.package-archive")
@@ -249,7 +249,7 @@ class FileSortUtil{
             while (cursor!!.moveToNext()) {
                 filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA))
                 if (!File(filePath).isHidden){
-                    apks.add(FileBean(File(filePath)))
+                    apks.add(ExFile(filePath))
                 }
             }
             cursor.close()

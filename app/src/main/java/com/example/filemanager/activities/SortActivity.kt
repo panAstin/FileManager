@@ -21,7 +21,7 @@ import java.util.concurrent.Executors
 
 
 class SortActivity : AppCompatActivity() {
-    private var sFiles: ArrayList<FileBean>? = null
+    private var sFiles: ArrayList<ExFile>? = null
     private var sRecyclerView: RecyclerView? = null
     private var fmadapter: fmAdapter? = null
     private val Sortstxt = arrayOf("文档","下载","音乐","图片","视频","压缩包","安装包")
@@ -59,7 +59,7 @@ class SortActivity : AppCompatActivity() {
                     fmadapter!!.notifyDataSetChanged()
                     this@SortActivity.invalidateOptionsMenu()
                 }else{
-                    val path = sFiles!![viewHolder.adapterPosition].getFile().path
+                    val path = sFiles!![viewHolder.adapterPosition].path
                     val file = File(path)
                     if (file.exists() && file.canRead()) {            // 文件存在并可读
                         FileUtil.openFile(this@SortActivity,file)              //打开文件
@@ -83,18 +83,18 @@ class SortActivity : AppCompatActivity() {
      */
     private fun showFiles(sort:Int){
         sFiles = ArrayList()
-        val fileBeans = FileSortUtil().getFilesByType(FileType.getFileTypeByOrdinal(sort))
-        if(fileBeans != null){
-          for (fb in fileBeans){
-              fb.initIcon(applicationContext)
+        val exfiles = FileSortUtil().getFilesByType(FileType.getFileTypeByOrdinal(sort))
+        if(exfiles != null){
+          for (ef in exfiles){
+              ef.initIcon(applicationContext)
               cacheThreadPool.execute{
                   try {
-                      fb.setSize(FileUtil.getAutoFileOrFilesSize(fb.getFile().path))
+                      ef.setSize(FileUtil.getAutoFileOrFilesSize(ef.path))
                   }catch (e:Exception){
                       e.stackTrace
                   }
               }
-              sFiles!!.add(fb)
+              sFiles!!.add(ef)
           }
         }
         fmadapter?.setListData(sFiles!!)
@@ -120,7 +120,7 @@ class SortActivity : AppCompatActivity() {
                             if (-1 == result){
                                 try {
                                     while (i> -1 ) {
-                                        if (FileUtil.deleteFile(this@SortActivity, filebeans.valueAt(i).getFile())) {
+                                        if (FileUtil.deleteFile(this@SortActivity, filebeans.valueAt(i))) {
                                             fmadapter!!.removeItem(filebeans.keyAt(i)) //移除列表项
                                         }
                                         i--
@@ -166,7 +166,7 @@ class SortActivity : AppCompatActivity() {
                 val filebeans = getSelectedFiles()
                 FileListFragment.selectedFiles = ArrayList()
                 for (filebean in filebeans){
-                    if (!filebean.value.getFile().exists()) {
+                    if (!filebean.value.exists()) {
                         displaySnackbar("复制失败")
                     }
                     FileListFragment.selectedFiles!!.add(filebean.value)
@@ -176,7 +176,7 @@ class SortActivity : AppCompatActivity() {
                 this.invalidateOptionsMenu()
             }
             Menu.FIRST + 5 ->{ //重命名
-                val file = getSelectedFiles().valueAt(0).getFile()
+                val file = getSelectedFiles().valueAt(0)
                 val position = getSelectedFiles().keyAt(0)
                 DialogFragmentHelper.showInsertDialog(this.supportFragmentManager,"重命名文件",file.name,
                         object: IDialogResultListener<String> {
@@ -191,7 +191,7 @@ class SortActivity : AppCompatActivity() {
                                     newFile = File(fpath + "/" + modifyName)
                                 }
                                 if (FileUtil.renameFile(this@SortActivity,file,newFile)) {
-                                    sFiles!![position] = FileBean(newFile).getInitailed(this@SortActivity)
+                                    sFiles!![position] = ExFile(newFile.path).getInitailed(this@SortActivity)
                                     fmadapter!!.notifyItemChanged(position)
                                     displaySnackbar("重命名成功！")
                                 } else {
@@ -205,8 +205,8 @@ class SortActivity : AppCompatActivity() {
     }
 
     //获取被选中的文件
-    private fun getSelectedFiles():ArrayMap<Int,FileBean>{
-        val files = ArrayMap<Int,FileBean>()
+    private fun getSelectedFiles():ArrayMap<Int,ExFile>{
+        val files = ArrayMap<Int,ExFile>()
         for (isselect in fmAdapter.isSelected!!){
             if(isselect.value){
                 files.put(isselect.key,sFiles!![isselect.key])

@@ -7,7 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.support.v4.content.FileProvider
 import android.util.Log
-import com.example.filemanager.FileBean
+import com.example.filemanager.ExFile
 import com.example.filemanager.FileType
 import org.json.JSONObject
 import java.io.*
@@ -236,7 +236,7 @@ object FileUtil {
      * @param file 文件
      */
     fun getType(file: File): FileType? {
-        return when(FileBean(file).getTypeID()){
+        return when(ExFile(file.path).getTypeID()){
             2 -> FileType.text
             3 -> FileType.music
             4 -> FileType.video
@@ -372,8 +372,8 @@ object FileUtil {
      * @param path 路径
      * @return 搜索结果
      */
-     fun FileSearch(key: String, path: String):ArrayList<FileBean> {
-        val fileBeans = ArrayList<FileBean>()
+     fun FileSearch(key: String, path: String):ArrayList<ExFile> {
+        val fileBeans = ArrayList<ExFile>()
         val file = File(path)
         val files = file.listFiles()
         files
@@ -385,7 +385,7 @@ object FileUtil {
                         fileBeans.addAll(FileSearch(key, it.path))
                     }
                     if (key in it.name) {
-                        val fb = FileBean(it)
+                        val fb = ExFile(it.path)
                         fileBeans.add(fb)
                     }
                 }
@@ -438,9 +438,9 @@ object FileUtil {
      * 读取压缩文件列表
      *
      */
-    fun readZipfiles(filepath:String):ArrayList<FileBean>{
+    fun readZipfiles(filepath:String):ArrayList<ExFile>{
         val ltag = "readzip"
-        val files = ArrayList<FileBean>()
+        val files = ArrayList<ExFile>()
 
         return files
     }

@@ -12,7 +12,7 @@ import android.view.animation.AnimationUtils
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
-import com.example.filemanager.FileBean
+import com.example.filemanager.ExFile
 import com.example.filemanager.R
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Transformation
@@ -22,7 +22,7 @@ import kotlin.collections.ArrayList
 internal class fmAdapter//参数初始化
 (context: Context) : RecyclerView.Adapter<fmAdapter.myViewHolder>() {
     private val inflater: LayoutInflater
-    private var fileBeans: ArrayList<FileBean> = ArrayList()    //存储文件信息
+    private var exFiles: ArrayList<ExFile> = ArrayList()    //存储文件信息
     companion object {
         var isSelected: ArrayMap<Int,Boolean>? =null   // 存储CheckBox选择信息
         var selectFlag = 0          //选择模式标识
@@ -38,13 +38,13 @@ internal class fmAdapter//参数初始化
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int)= myViewHolder(inflater.inflate(R.layout.file, parent, false))
 
     override fun onBindViewHolder(holder: myViewHolder, position: Int) {
-        val filebean = fileBeans[position]
+        val filebean = exFiles[position]
         inititem(holder,filebean)
     }
 
     override fun getItemId(position: Int) = position.toLong()
 
-    override fun getItemCount() =  fileBeans.size
+    override fun getItemCount() =  exFiles.size
 
     class myViewHolder internal constructor(view: View) : RecyclerView.ViewHolder(view) {
         internal val name: TextView = view.findViewById(R.id.textView) as TextView
@@ -54,19 +54,19 @@ internal class fmAdapter//参数初始化
         val cb : CheckBox = view.findViewById(R.id.checkBox) as CheckBox
     }
 
-    private fun inititem(holder: myViewHolder,fileBean: FileBean) {
-        val i = fileBeans.indexOf(fileBean)
-        holder.name.text = fileBean.getFile().name
-        holder.size.text = fileBean.getSize()
-        holder.date.text = fileBean.getDate()
-        if(fileBean.getIcon()==null){
+    private fun inititem(holder: myViewHolder,exFile: ExFile) {
+        val i = exFiles.indexOf(exFile)
+        holder.name.text = exFile.name
+        holder.size.text = exFile.getSize()
+        holder.date.text = exFile.getDate()
+        if(exFile.getIcon()==null){
             Picasso.with(inflater.context)          //使用Picasso生成图片缩略图
-                    .load(File(fileBean.getFile().path))
+                    .load(File(exFile.path))
                     .config(Bitmap.Config.RGB_565)
                     .transform(getTransformation(holder.image))
                     .into(holder.image)
         }else{
-            holder.image.setImageBitmap(fileBean.getIcon())
+            holder.image.setImageBitmap(exFile.getIcon())
         }
         holder.cb.tag = i
         if (selectFlag >0){
@@ -77,8 +77,8 @@ internal class fmAdapter//参数初始化
         }
     }
 
-    fun setListData(fileBeans: ArrayList<FileBean>){
-        this.fileBeans = fileBeans
+    fun setListData(exfiles: ArrayList<ExFile>){
+        this.exFiles = exfiles
         this.notifyDataSetChanged()
     }
 
@@ -99,7 +99,7 @@ internal class fmAdapter//参数初始化
         do {
             isSelected!![i] = false
             i++
-        }while (i<fileBeans.size)
+        }while (i< exFiles.size)
     }
 
     fun getSelectCount():Int{
@@ -112,14 +112,14 @@ internal class fmAdapter//参数初始化
         return count
     }
 
-    fun addItem(fileBean: FileBean) {
-        fileBeans.add(fileBean)
-        val position = fileBeans.indexOf(fileBean)
+    fun addItem(exFile: ExFile) {
+        exFiles.add(exFile)
+        val position = exFiles.indexOf(exFile)
         notifyItemInserted(position)
     }
 
     fun removeItem(position: Int) {
-        fileBeans.removeAt(position)
+        exFiles.removeAt(position)
         notifyItemRemoved(position)
     }
 

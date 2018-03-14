@@ -28,7 +28,7 @@ import kotlin.collections.ArrayList
  * 文件列表
  */
 class FileListFragment : Fragment() {
-    private var mFiles: ArrayList<FileBean>? = null     //存储文件信息
+    private var mFiles: ArrayList<ExFile>? = null     //存储文件信息
     private var currentpath = FileUtil.ROOT_PATH        //当前文件路径
     private var mRecyclerView: RecyclerView? = null
     private var patharea: RecyclerView? = null
@@ -38,10 +38,11 @@ class FileListFragment : Fragment() {
     private var fmadapter: fmAdapter? = null
     private var mactivity: MainActivity? = null
     private var cacheThreadPool = Executors.newCachedThreadPool()           //线程池
+    private val positioncache = MemoryCacheUtils()     //滚动条位置缓存
     var msg = Message()    //消息
 
     companion object {
-        var selectedFiles: ArrayList<FileBean>? = null        //被选中的文件
+        var selectedFiles: ArrayList<ExFile>? = null        //被选中的文件
         var Pathnotes = ArrayList<String>()     //存储路径记录
         @Volatile var isFinished = true          //正常完成标识
     }
@@ -98,7 +99,7 @@ class FileListFragment : Fragment() {
                          //需要花时间的方法
                          try {
                              isFinished = true
-                             var result:ArrayList<FileBean> = ArrayList()
+                             var result:ArrayList<ExFile> = ArrayList()
                              while(!Thread.currentThread().isInterrupted){
                                  result= FileSearch(query, currentpath)
                                  Thread.currentThread().interrupt()
@@ -130,16 +131,16 @@ class FileListFragment : Fragment() {
             }
         })
         menuItemD.setOnMenuItemClickListener({//删除文件
-            val filebeans = getSelectedFiles()
-            var i = filebeans.size - 1
+            val exfiles = getSelectedFiles()
+            var i = exfiles.size - 1
             DialogFragmentHelper.showConfirmDialog(fragmentManager,"确定要删除选中的文件吗？",
                     object :IDialogResultListener<Int>{
                         override fun onDataResult(result: Int) {
                             if (-1 == result){
                                 try {
                                     while (i> -1 ) {
-                                        if (FileUtil.deleteFile(context, filebeans.valueAt(i).getFile())) {
-                                            fmadapter!!.removeItem(filebeans.keyAt(i)) //移除列表项
+                                        if (FileUtil.deleteFile(context, exfiles.valueAt(i))) {
+                                            fmadapter!!.removeItem(exfiles.keyAt(i)) //移除列表项
                                         }
                                         i--
                                     }
@@ -196,10 +197,9 @@ class FileListFragment : Fragment() {
                         object:IDialogResultListener<String>{
                             override fun onDataResult(result: String) {
                                 // TODO Auto-generated method stub
-                                val mFileName = result
-                                val newfilepath = "$currentpath/$mFileName/"       //获取根目录
+                                val newfilepath = "$currentpath/$result/"       //获取根目录
                                 FileUtil.createMkdir(newfilepath)
-                                val newfb = FileBean(File(newfilepath)).getInitailed(context)
+                                val newfb = ExFile(newfilepath).getInitailed(context)
                                 fmadapter!!.addItem(newfb)
                             }
                         },true)
@@ -213,8 +213,8 @@ class FileListFragment : Fragment() {
                     for (selectfile in selectedFiles!!) {
                         //需要花时间的方法
                         try {
-                            val targetpath = currentpath + "/" + selectfile.getFile().name
-                            FileUtil.copy(selectfile.getFile().path, targetpath)
+                            val targetpath = currentpath + "/" + selectfile.name
+                            FileUtil.copy(selectfile.path, targetpath)
                             msg.arg1 = 2
                             val bundle = Bundle()
                             bundle.putString("path",targetpath)
@@ -231,20 +231,20 @@ class FileListFragment : Fragment() {
                 mthread.start()
             }
             Menu.FIRST + 4 -> {   //复制文件
-                val filebeans = getSelectedFiles()
+                val exfiles = getSelectedFiles()
                 selectedFiles = ArrayList()
-                for (filebean in filebeans){
-                    if (!filebean.value.getFile().exists()) {
+                for (exfile in exfiles){
+                    if (!exfile.value.exists()) {
                         displaySnackbar("复制失败")
                     }
-                    selectedFiles!!.add(filebean.value)
+                    selectedFiles!!.add(exfile.value)
                 }
                 displaySnackbar("文件已复制")
                 fmadapter!!.changeSelecFlag()
                 mactivity?.invalidateOptionsMenu()
             }
             Menu.FIRST + 5 ->{   //重命名
-                val file = getSelectedFiles().valueAt(0).getFile()
+                val file = getSelectedFiles().valueAt(0)
                 val position = getSelectedFiles().keyAt(0)
                 DialogFragmentHelper.showInsertDialog(fragmentManager,"重命名文件",file.name,
                         object:IDialogResultListener<String>{
@@ -259,7 +259,7 @@ class FileListFragment : Fragment() {
                                     newFile = File(fpath + "/" + modifyName)
                                 }
                                 if (FileUtil.renameFile(context,file,newFile)) {
-                                    mFiles!![position] = FileBean(newFile).getInitailed(context)
+                                    mFiles!![position] = ExFile(newFile.path).getInitailed(context)
                                     fmadapter!!.notifyItemChanged(position)
                                     displaySnackbar("重命名成功！")
                                 } else {
@@ -270,13 +270,13 @@ class FileListFragment : Fragment() {
             }
             Menu.FIRST + 6 ->{   //压缩
                 val files = ArrayList<File>()
-                val filebeans = getSelectedFiles()
+                val exfiles = getSelectedFiles()
                 var zipresult = false
-                for (filebean in filebeans){
-                    if (!filebean.value.getFile().exists()) {
+                for (exfile in exfiles){
+                    if (!exfile.value.exists()) {
                         displaySnackbar("压缩失败")
                     }
-                    files.add(filebean.value.getFile())
+                    files.add(exfile.value)
                 }
 
                 DialogFragmentHelper.showInsertDialog(fragmentManager,"输入压缩文件名","",
@@ -288,7 +288,7 @@ class FileListFragment : Fragment() {
                         }
                         if(zipresult){
                             fmadapter?.changeSelecFlag()
-                            fmadapter!!.addItem(FileBean(File(zippath)).getInitailed(context))
+                            fmadapter!!.addItem(ExFile(zippath).getInitailed(context))
                             displaySnackbar("压缩成功")
                         }else{
                             displaySnackbar("压缩失败")
@@ -348,11 +348,14 @@ class FileListFragment : Fragment() {
                     mactivity?.invalidateOptionsMenu()
                 } else {
                     Log.i("click",viewHolder.adapterPosition.toString())
-                    val path = mFiles!![viewHolder.adapterPosition].getFile().path
+                    val path = mFiles!![viewHolder.adapterPosition].path
                     val file = File(path)
                     if (file.exists() && file.canRead()) {            // 文件存在并可读
                         when {
-                            file.isDirectory -> showFileDir(path)                      //显示子目录及文件
+                            file.isDirectory -> {
+                                positioncache.setPositionToMemory(currentpath,viewHolder.adapterPosition)
+                                showFileDir(path)
+                            }                      //显示子目录及文件
                             FileUtil.getType(file) == FileType.zip -> //压缩文件，解压到当前目录
                                 DialogFragmentHelper.showConfirmDialog(fragmentManager,
                                         "是否解压文件到当前目录？",object :IDialogResultListener<Int>{
@@ -430,18 +433,22 @@ class FileListFragment : Fragment() {
                     it.isHidden      //筛选隐藏文件
                 }
                 .forEach {
-                    val fb  = FileBean(it)
-                    fb.initIcon(context)
+                    val ef  = ExFile(it.path)
+                    ef.initIcon(context)
                     cacheThreadPool.execute{
                         try {
-                            fb.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
+                            ef.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
                         }catch (e:Exception){
                             e.stackTrace
                         }
                     }
-                    mFiles!!.add(fb) }
+                    mFiles!!.add(ef) }
 
         fmadapter?.setListData(mFiles!!)
+        val position = positioncache.getPositionFromMemory(path)
+        if (position != null) {
+            mRecyclerView?.scrollToPosition(position as Int)
+        }
         Handler().postDelayed( { //消息处理延迟执行
             fmadapter?.notifyDataSetChanged()
         },800)
@@ -458,8 +465,8 @@ class FileListFragment : Fragment() {
      * @param path 路径
      * @return 搜索结果
      */
-    private fun FileSearch(key: String, path: String):ArrayList<FileBean> {
-        val fileBeans = ArrayList<FileBean>()
+    private fun FileSearch(key: String, path: String):ArrayList<ExFile> {
+        val exfiles = ArrayList<ExFile>()
         val file = File(path)
         val files = file.listFiles()
         files
@@ -468,32 +475,32 @@ class FileListFragment : Fragment() {
                 }
                 .forEach {
                     if (it.isDirectory) {
-                        fileBeans.addAll(FileSearch(key, it.path))
+                        exfiles.addAll(FileSearch(key, it.path))
                     }
                     if (key in it.name) {
-                        val fb = FileBean(it)
-                        fb.initIcon(context)
+                        val ef = ExFile(it.path)
+                        ef.initIcon(context)
                         cacheThreadPool.execute {
                             try {
-                                fb.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
+                                ef.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
                             } catch (e: Exception) {
                                 e.stackTrace
                             }
                         }
-                        fileBeans.add(fb)
+                        exfiles.add(ef)
                     }
                 }
-        return  fileBeans
+        return  exfiles
     }
 
     /**
      * 获取被选文件
      */
-    private fun getSelectedFiles():ArrayMap<Int,FileBean>{
-        val files = ArrayMap<Int,FileBean>()
+    private fun getSelectedFiles():ArrayMap<Int,ExFile>{
+        val files = ArrayMap<Int,ExFile>()
         for (isselect in fmAdapter.isSelected!!){
             if(isselect.value){
-                files.put(isselect.key,mFiles!![isselect.key])
+                files[isselect.key] = mFiles!![isselect.key]
             }
         }
         return files
@@ -560,7 +567,7 @@ class FileListFragment : Fragment() {
                 }
                 msg.arg1 == 2 -> {
                     val targetpath = msg.data.getString("path")
-                    fmadapter!!.addItem(FileBean(File(targetpath)).getInitailed(context))
+                    fmadapter!!.addItem(ExFile(targetpath).getInitailed(context))
 
                     if(MediaUtil.isMediaFile(targetpath)){
                         MediaUtil.sendScanFileBroadcast(context,targetpath)

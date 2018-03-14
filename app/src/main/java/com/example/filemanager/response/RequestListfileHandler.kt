@@ -1,7 +1,7 @@
 package com.example.filemanager.response
 
 import android.util.Log
-import com.example.filemanager.FileBean
+import com.example.filemanager.ExFile
 import com.example.filemanager.FileType
 import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.utils.FileUtil
@@ -29,7 +29,7 @@ class RequestListfileHandler{
                 null
             }
         }else if (key==""){
-            var sortfile = ArrayList<FileBean>()
+            var sortfile = ArrayList<ExFile>()
             when(type){
                 "image"->{
                     sortfile = FileSortUtil.mAllFiles[FileType.photo]!!
@@ -59,22 +59,22 @@ class RequestListfileHandler{
                     it.isHidden
                 }
                 .forEach{
-                    val fb = FileBean(it)
+                    val ef = ExFile(it.path)
                     val jsonobj = JSONObject()
                     jsonobj.put("name",it.name)
-                    jsonobj.put("type",fb.getTypeID().toString())
+                    jsonobj.put("type",ef.getTypeID().toString())
                     jsonobj.put("path",it.path.replace(FileUtil.ROOT_PATH,""))
                     js.put(jsonobj)
                 }
         return js
     }
-    private fun getFile(filebean:ArrayList<FileBean>):JSONArray{
+    private fun getFile(filebean:ArrayList<ExFile>):JSONArray{
         val js = JSONArray()
         for(fb in filebean){
             val jsonobj = JSONObject()
-            jsonobj.put("name",fb.getFile().name)
+            jsonobj.put("name",fb.name)
             jsonobj.put("type",fb.getTypeID().toString())
-            jsonobj.put("path",fb.getFile().path.replace(FileUtil.ROOT_PATH,""))
+            jsonobj.put("path",fb.path.replace(FileUtil.ROOT_PATH,""))
             js.put(jsonobj)
         }
         return js
