@@ -120,7 +120,7 @@ class SortActivity : AppCompatActivity() {
                             if (-1 == result){
                                 try {
                                     while (i> -1 ) {
-                                        if (FileUtil.deleteFile(this@SortActivity, filebeans.valueAt(i))) {
+                                        if (FileUtil.deleteFile(filebeans.valueAt(i),this@SortActivity)) {
                                             fmadapter!!.removeItem(filebeans.keyAt(i)) //移除列表项
                                         }
                                         i--
@@ -190,7 +190,7 @@ class SortActivity : AppCompatActivity() {
                                     modifyName += "("+i.toString()+")"
                                     newFile = File(fpath + "/" + modifyName)
                                 }
-                                if (FileUtil.renameFile(this@SortActivity,file,newFile)) {
+                                if (FileUtil.renameFile(file,newFile,this@SortActivity)) {
                                     sFiles!![position] = ExFile(newFile.path).getInitailed(this@SortActivity)
                                     fmadapter!!.notifyItemChanged(position)
                                     displaySnackbar("重命名成功！")

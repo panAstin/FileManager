@@ -5,33 +5,28 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 import java.nio.channels.SocketChannel
 import java.nio.charset.Charset
-import java.util.concurrent.ArrayBlockingQueue
 
 /**
  * Created by 11046 on 2018/2/14.
- * 文件同步客户端
+ * NIOSocket客户端
  */
-class FileAsyncClient(private var address: InetAddress){
+class NioClient(private var address: InetAddress){
     // 创建一个套接字通道，注意这里必须使用无参形式
     private var selector: Selector? = null
-    //使用Map保存每个连接，当OP_READ就绪时，根据key找到对应的文件对其进行写入。若将其封装成一个类，作为值保存，可以再上传过程中显示进度等等
-    var fileMap: Map<SelectionKey, FileChannel> = HashMap()
     var charset = Charset.forName("UTF-8")
     @Volatile
     private var stop = false
-    var arrayQueue = ArrayBlockingQueue<String>(8)
     @Throws(IOException::class)
     fun init() {
         selector = Selector.open()
         val channel = SocketChannel.open()
         // 设置为非阻塞模式，这个方法必须在实际连接之前调用(所以open的时候不能提供服务器地址，否则会自动连接)
         channel.configureBlocking(false)
-        if (channel.connect(InetSocketAddress(address, 7777))) {
+        if (channel.connect(InetSocketAddress(address, 8081))) {
             channel.register(selector, SelectionKey.OP_READ)
             //发送消息
             doWrite(channel, "66666666")

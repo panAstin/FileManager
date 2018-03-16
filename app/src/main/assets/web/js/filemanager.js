@@ -46,7 +46,7 @@ var fileamount = 0; //总文件数量
             //显示新文件列表
             var xhrt = JSON.parse(xmlhttp.responseText);
             if($.isEmptyObject(xhrt)){
-                alert("未搜索到符合文件");
+                showalert("未搜索到符合文件");
             }else{
                 showFile(xhrt);
             }
@@ -140,7 +140,7 @@ var fileamount = 0; //总文件数量
             form.append($('<input type="hidden" name="filenames" value="' + files + '">'));
             form.appendTo('body').submit().remove();
         }else{
-            alert("请选择要下载的文件!");
+            showalert("请选择要下载的文件!");
         }
     }
 
@@ -251,24 +251,39 @@ var fileamount = 0; //总文件数量
         
     }
 
+    //警告窗
+    function showalert(text){
+        var alertdiv = $("<div></div>").addClass("alert alert-warning navbar-fixed-bottom");
+        var alertclose = $("<a></a>").addClass("close").attr("data-dismiss","alert");
+        alertclose.html("&times;");
+        alertdiv.append(alertclose);
+        alertdiv.append(text);
+        $("body").append(alertdiv);
+    };
+
     //重命名弹窗
     function showrename(){
-        var alertdiv = $("<div></div>").addClass("alert alert-warning");
         if(sfiles.size>1){
             //选中文件大于一
-            alertdiv.html("选中文件过多"); 
-        }else if(sfiles.empty()){
+            showalert("选择文件过多");
+        }else if(sfiles.size == 0){
             //未选中文件
-            alertdiv.html("请先选择文件"); 
+            showalert("请先选择文件");
         }else{
             $("#fileModalLabel").text("重命名");
             $("#fmodalbody").empty();
+            var renameform = $("<form></form>").addClass("form-inline");
             var formgroup = $("<div></div>").addClass("form-group");
-            var inputname = $("<input>").addClass("form-control").attr({"type":"text","id":"newname","placeholder":sfiles[0]});
+            var inputname = $("<input>").addClass("form-control").attr({"type":"text","id":"newname"});
+            var fnames = sfiles.values();
+            sfiles.forEach(function(oldname){
+                inputname.val(oldname);
+            });
             var renamebtn = $("<button></button>").addClass("btn btn-default").attr("onclick","rename()").html("确定");
             formgroup.append(inputname);
             formgroup.append(renamebtn);
-            $("#fmodalbody").append(formgroup);
+            renameform.append(formgroup);
+            $("#fmodalbody").append(renameform);
             $("#fileModal").modal('show');
         }
     }
@@ -305,7 +320,7 @@ var fileamount = 0; //总文件数量
                 }
             });    
         }else{
-            alert("请选择要删除的文件!");
+            showalert("请选择要删除的文件!");
         }
     }
 

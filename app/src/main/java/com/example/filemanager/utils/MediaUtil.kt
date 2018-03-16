@@ -1,5 +1,6 @@
 package com.example.filemanager.utils
 
+import android.app.Application
 import android.text.TextUtils
 import android.provider.MediaStore.Video
 import android.provider.MediaStore.Audio
@@ -10,6 +11,7 @@ import android.media.MediaScannerConnection.OnScanCompletedListener
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import com.example.filemanager.activities.MainActivity
 import java.io.File
 
 

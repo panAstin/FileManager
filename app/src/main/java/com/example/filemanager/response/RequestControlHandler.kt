@@ -17,7 +17,7 @@ class RequestControlHandler{
         val newname = URLDecoder.decode(params["newfile"],"utf-8")
         val oldfile = File(path + File.separator + oldname)
         val newfile = File(path + File.separator + newname)
-        if(FileUtil.renameFile(null,oldfile,newfile)){
+        if(FileUtil.renameFile(oldfile,newfile)){
             return true
         }
         return false
@@ -31,7 +31,7 @@ class RequestControlHandler{
         var f:File
         for (fname in fnamelist){
             f = File(path + File.separator +fname)
-            if(!FileUtil.deleteFile(null,f)){
+            if(!FileUtil.deleteFile(f)){
                 return false
             }
         }

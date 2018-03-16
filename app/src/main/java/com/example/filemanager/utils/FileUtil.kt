@@ -183,12 +183,13 @@ object FileUtil {
      * @param context
      * @param file 文件
      */
-    fun deleteFile(context: Context?,file: File):Boolean{
+    @JvmOverloads
+    fun deleteFile(file: File,context: Context? = null):Boolean{
         if(file.isDirectory){  //文件夹
             val files = file.listFiles()
             if(context != null){
                 for (mfile in files){
-                    deleteFile(context,mfile)
+                    deleteFile(mfile,context)
                 }
             }
             return file.delete()
@@ -210,7 +211,8 @@ object FileUtil {
      * @param oldfile 原文件
      * @param newfile 重命名后文件
      */
-    fun renameFile(context: Context?,oldfile: File,newfile:File):Boolean{
+    @JvmOverloads
+    fun renameFile(oldfile: File,newfile:File,context: Context? = null):Boolean{
         if(oldfile.renameTo(newfile)){
             if (MediaUtil.isMediaFile(newfile.path)&&context!=null){
                 MediaUtil.renameMediaFile(context, oldfile.path, newfile.path)  //修改多媒体库中文件名

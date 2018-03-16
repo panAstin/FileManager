@@ -29,7 +29,8 @@ import android.text.TextUtils
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
-import com.example.filemanager.FileAsyncClient
+import com.example.filemanager.NioClient
+import com.example.filemanager.NioServer
 import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.R
 import com.example.filemanager.fragments.FileListFragment
@@ -39,7 +40,6 @@ import com.example.filemanager.receivers.WifiDirectReceiver
 import com.example.filemanager.utils.SnackbarUtil
 import java.net.InetAddress
 import kotlin.collections.ArrayList
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         checkPermissions()
         initConf()
         if(CONFIG["synflag"]!!.toBoolean()){
-            doFileAsync()
+            startFileSync()
         }
     }
 
@@ -161,7 +161,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     //开启wifi direct进行文件同步
-    private fun doFileAsync(){
+    private fun startFileSync(){
         mFilter = IntentFilter()
         //指示wifi p2p的状态变化
         mFilter?.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
@@ -188,6 +188,33 @@ class MainActivity : AppCompatActivity() {
 
         mWifiDirectReceiver = WifiDirectReceiver(this,mManager!!)
         registerReceiver(mWifiDirectReceiver,mFilter)
+    }
+
+    private fun stopFileSync(){
+        mManager?.stopPeerDiscovery(mChannel,object: WifiP2pManager.ActionListener{
+            override fun onFailure(reason: Int) {
+                Log.e("wifip2p","停止失败-->"+reason)
+            }
+
+            override fun onSuccess() {
+                Log.e("wifip2p","停止成功")
+            }
+        })
+        //注销广播
+        if(mWifiDirectReceiver != null) {
+            unregisterReceiver(mWifiDirectReceiver)
+            if (connected) {
+                mManager?.removeGroup(mChannel, object : WifiP2pManager.ActionListener {
+                    override fun onFailure(reason: Int) {
+                        Log.e("wifip2p", "移除失败-->" + reason)
+                    }
+
+                    override fun onSuccess() {
+                        Log.e("wifip2p", "移除成功")
+                    }
+                })
+            }
+        }
     }
 
     fun setIsWifiDirectEnable(enabled:Boolean){
@@ -232,21 +259,15 @@ class MainActivity : AppCompatActivity() {
 
     val connectionInfoListener = WifiP2pManager.ConnectionInfoListener { info ->
         var address: InetAddress? = null
-        var isGroupOwner = false
         if (info!!.groupFormed && info.isGroupOwner){
             Log.i("wifip2p","server")
             address = info.groupOwnerAddress
-            isGroupOwner = true
-            thread {
+            NioServer(address)
 
-            }.start()
         }else if(info.groupFormed){
             Log.i("wifip2p","client")
             address = info.groupOwnerAddress
-            isGroupOwner = false
-            thread {
-                FileAsyncClient(address)
-            }.start()
+            NioClient(address)
         }
         if(null != address){
             connected = true
@@ -270,6 +291,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         serverBtn.text = getString(R.string.stopserver)
                         SnackbarUtil.short(v,"服务器启动")
+                        stopFileSync()
                     }
                     else{
                         this.stopService(serverUtil?.getservice())
@@ -290,21 +312,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        //注销广播
-        if(mWifiDirectReceiver != null) {
-            unregisterReceiver(mWifiDirectReceiver)
-            if (connected) {
-                mManager?.removeGroup(mChannel, object : WifiP2pManager.ActionListener {
-                    override fun onFailure(reason: Int) {
-                        Log.e("wifip2p", "移除失败-->" + reason)
-                    }
-
-                    override fun onSuccess() {
-                        Log.e("wifip2p", "移除成功")
-                    }
-                })
-            }
-        }
+        stopFileSync()
     }
 
     /**

@@ -139,7 +139,7 @@ class FileListFragment : Fragment() {
                             if (-1 == result){
                                 try {
                                     while (i> -1 ) {
-                                        if (FileUtil.deleteFile(context, exfiles.valueAt(i))) {
+                                        if (FileUtil.deleteFile(exfiles.valueAt(i),context)) {
                                             fmadapter!!.removeItem(exfiles.keyAt(i)) //移除列表项
                                         }
                                         i--
@@ -258,7 +258,7 @@ class FileListFragment : Fragment() {
                                     modifyName += "("+i.toString()+")"
                                     newFile = File(fpath + "/" + modifyName)
                                 }
-                                if (FileUtil.renameFile(context,file,newFile)) {
+                                if (FileUtil.renameFile(file,newFile,context)) {
                                     mFiles!![position] = ExFile(newFile.path).getInitailed(context)
                                     fmadapter!!.notifyItemChanged(position)
                                     displaySnackbar("重命名成功！")
