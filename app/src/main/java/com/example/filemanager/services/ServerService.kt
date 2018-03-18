@@ -19,8 +19,8 @@ class ServerService: Service() {
     override fun onCreate() {
         mAssetManager = assets
         Log.i("fffffff",MainActivity.CONFIG.toString())
-        val port = MainActivity.CONFIG["port"]!!.toInt()
-        val savemode = MainActivity.CONFIG["mode"]!!.toInt()
+        val port = MainActivity.CONFIG["port"] as Int
+        val savemode = MainActivity.CONFIG["mode"] as Int
 
         mServer = HttpServer(mAssetManager!!,savemode,port)  //服务器
     }

@@ -43,7 +43,8 @@ import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
     companion object {
-        var CONFIG = HashMap<String,String>()
+        var CONFIG = HashMap<String,Any>()   //全局设置
+        var SERVER_STATU = false           //服务器运行状态
     }
     private val REQUEST_CODE = 11
     private var tablayout: TabLayout? = null
@@ -72,10 +73,11 @@ class MainActivity : AppCompatActivity() {
             window.statusBarColor = Color.TRANSPARENT
             window.navigationBarColor = Color.TRANSPARENT
         //}
-
         checkPermissions()
+
         initConf()
-        if(CONFIG["synflag"]!!.toBoolean()){
+        if(CONFIG["synflag"]!! as Boolean){
+            Log.i("wifp2p","start")
             startFileSync()
         }
     }
@@ -108,9 +110,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initConf(){
         val preferences = getSharedPreferences("ServerSetting", Context.MODE_PRIVATE)
-        CONFIG["mode"] = preferences.getInt("mode",0).toString()
-        CONFIG["synflag"] = preferences.getBoolean("synflag",false).toString()
-        CONFIG["port"] = preferences.getInt("port",9090).toString()
+        CONFIG["mode"] = preferences.getInt("mode",0)
+        CONFIG["synflag"] = preferences.getBoolean("synflag",false)
+        CONFIG["port"] = preferences.getInt("port",9090)
     }
 
     /**
@@ -202,7 +204,12 @@ class MainActivity : AppCompatActivity() {
         })
         //注销广播
         if(mWifiDirectReceiver != null) {
-            unregisterReceiver(mWifiDirectReceiver)
+            try{
+                unregisterReceiver(mWifiDirectReceiver)
+            }catch (e:Exception){
+                e.printStackTrace()
+                Log.e("wifip2p","广播未注册")
+            }
             if (connected) {
                 mManager?.removeGroup(mChannel, object : WifiP2pManager.ActionListener {
                     override fun onFailure(reason: Int) {
@@ -284,9 +291,10 @@ class MainActivity : AppCompatActivity() {
                     val serverBtn = v as Button
                     if(!ServerUtil.SWITCH){
                         this.startService(serverUtil?.getservice())
+                        SERVER_STATU = true
                         val ipformat = getString(R.string.httpadd)
                         if(!TextUtils.isEmpty(ServerUtil.ip)){
-                            val port = CONFIG["port"]?.toInt()
+                            val port = CONFIG["port"]
                             address_tv?.text = String.format(ipformat, ServerUtil.ip,port)
                         }
                         serverBtn.text = getString(R.string.stopserver)
@@ -295,6 +303,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     else{
                         this.stopService(serverUtil?.getservice())
+                        SERVER_STATU = false
                         address_tv?.text = getText(R.string.noserver)
                         serverBtn.text = getString(R.string.startserver)
                         SnackbarUtil.short(v,"服务器停止")

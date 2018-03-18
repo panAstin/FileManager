@@ -46,7 +46,7 @@ var fileamount = 0; //总文件数量
             //显示新文件列表
             var xhrt = JSON.parse(xmlhttp.responseText);
             if($.isEmptyObject(xhrt)){
-                showalert("未搜索到符合文件");
+                showalert("warning","未搜索到符合文件");
             }else{
                 showFile(xhrt);
             }
@@ -135,12 +135,13 @@ var fileamount = 0; //总文件数量
             });
             files = files.substring(0,files.length-1);
             //生成下载表单并提交
+            showalert("info","正在生成下载请求...");
             var form = $('<form method="POST" action="download">');
             form.append($('<input type="hidden" name="path" value="' + cpath + '">'));
             form.append($('<input type="hidden" name="filenames" value="' + files + '">'));
             form.appendTo('body').submit().remove();
         }else{
-            showalert("请选择要下载的文件!");
+            showalert("warning","请选择要下载的文件!");
         }
     }
 
@@ -252,8 +253,8 @@ var fileamount = 0; //总文件数量
     }
 
     //警告窗
-    function showalert(text){
-        var alertdiv = $("<div></div>").addClass("alert alert-warning navbar-fixed-bottom");
+    function showalert(type,text){
+        var alertdiv = $("<div></div>").addClass("alert alert-"+type+" navbar-fixed-bottom");
         var alertclose = $("<a></a>").addClass("close").attr("data-dismiss","alert");
         alertclose.html("&times;");
         alertdiv.append(alertclose);
@@ -265,10 +266,10 @@ var fileamount = 0; //总文件数量
     function showrename(){
         if(sfiles.size>1){
             //选中文件大于一
-            showalert("选择文件过多");
+            showalert("warning","选择文件过多");
         }else if(sfiles.size == 0){
             //未选中文件
-            showalert("请先选择文件");
+            showalert("warning","请先选择文件");
         }else{
             $("#fileModalLabel").text("重命名");
             $("#fmodalbody").empty();
@@ -297,6 +298,7 @@ var fileamount = 0; //总文件数量
         });
         var inputname = $("#newname").val();
         xmlhttp=$.ajax({type:"POST",url:"renamefile",data:{path:cpath,oldname:sfiles[0],newname:inputname},async:true,success:function(){
+            showalert("success","操作成功");
             refreshFile();
             }
         });    
@@ -316,11 +318,12 @@ var fileamount = 0; //总文件数量
             files = files.substring(0,files.length-1);
 
             xmlhttp=$.ajax({type:"POST",url:"deletefile",data:{path:cpath,file:files},async:true,success:function(){
+                showalert("success","操作成功");
                 refreshFile();
                 }
             });    
         }else{
-            showalert("请选择要删除的文件!");
+            showalert("warning","请选择要删除的文件!");
         }
     }
 

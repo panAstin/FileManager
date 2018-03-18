@@ -64,7 +64,7 @@ object FileUtil {
      * @param jsonObject 已知jsonobject
      * @return 待同步文件列表
      */
-    fun getoutAsyncFiles(path: String,jsonObject: JSONObject):ArrayList<File>{
+    fun getoutSyncFiles(path: String,jsonObject: JSONObject):ArrayList<File>{
         val asyncdict = File(path)
         val asyncfiles = ArrayList<File>()
         if (!asyncdict.exists()){

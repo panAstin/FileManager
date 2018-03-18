@@ -1,6 +1,8 @@
 package com.example.filemanager
 
 import android.util.Log
+import com.example.filemanager.activities.MainActivity
+import com.example.filemanager.utils.ServerUtil
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -29,7 +31,7 @@ class NioClient(private var address: InetAddress){
         if (channel.connect(InetSocketAddress(address, 8081))) {
             channel.register(selector, SelectionKey.OP_READ)
             //发送消息
-            doWrite(channel, "66666666")
+            //doWrite(channel, "66666666")
         } else {
             channel.register(selector, SelectionKey.OP_CONNECT)
         }
@@ -59,7 +61,11 @@ class NioClient(private var address: InetAddress){
                         key.interestOps(SelectionKey.OP_READ);*/
                         sc.register(selector, SelectionKey.OP_READ)
                         //    new Thread(new DoWrite(channel)).start();
-                        doWrite(channel, "66666666")
+                        if(MainActivity.SERVER_STATU){
+                            doWrite(channel, ServerUtil.ip + MainActivity.CONFIG["port"])
+                        }else{
+                            doWrite(channel,"getaddress")
+                        }
                     } else {
                         //链接失败，进程推出
                         System.exit(1)
@@ -82,6 +88,12 @@ class NioClient(private var address: InetAddress){
                         sc.close()
                     }
                     println(content)
+                    if (content == "ok"){
+                        channel.close()
+                    }else{
+                        doWrite(channel,"ok")
+                        channel.close()
+                    }
                     key.interestOps(SelectionKey.OP_READ)
                 }
             }
