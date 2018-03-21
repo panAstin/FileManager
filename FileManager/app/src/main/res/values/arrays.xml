@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="modes">
+        <item>默认(download)</item>
+        <item>当前目录</item>
+    </string-array>
+</resources>

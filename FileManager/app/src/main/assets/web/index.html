@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>文件管理</title>
+    <script type="text/javascript" src="web/js/jquery.min.js"></script>
+    <script type="text/javascript" src="web/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="web/js/bootstrap-switch.min.js"></script>
+    <script type="text/javascript" src="web/js/fileinput.min.js"></script>
+    <script type="text/javascript" src="web/js/locales/zh.js"></script>
+
+    <link href="web/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="web/css/bootstrap-switch.min.css" rel="stylesheet" type="text/css">
+    <link href="web/css/fileinput.min.css" rel="stylesheet" type="text/css">
+</head>
+<body onload="listFile('')">
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">文件管理</a>
+            </div>
+              
+            <!-- 导航栏 -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="#"><span class="glyphicon glyphicon-th-large" aria-hidden="true"></span> 文件浏览<span class="sr-only">(current)</span></a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span> 文件分类 <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="javascript:void(0)" onclick="sortFile('image')"><span class="glyphicon glyphicon-picture" aria-hidden="true"></span> 图片</a></li>
+                            <li><a href="javascript:void(0)" onclick="sortFile('music')"><span class="glyphicon glyphicon-music" aria-hidden="true"></span> 音乐</a></li>
+                            <li><a href="javascript:void(0)" onclick="sortFile('video')"><span class="glyphicon glyphicon-film" aria-hidden="true"></span> 视频</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <!-- 搜索框 -->
+                <form class="navbar-form navbar-left">
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="keyword" placeholder="文件名">
+                        <button type="button" class="btn btn-default" onclick="searchFile();">搜索</button>
+                    </div>
+                    <!-- 上传下载按钮组 -->
+                    <div class="btn-group" role="group" aria-label="updown">
+                        <button type="button" class="btn btn-defaul" data-toggle="modal" data-target="#uploadModal"><span class="glyphicon glyphicon-upload" aria-hidden="true"></span> 上传文件</button>
+                        <button type="button" class="btn btn-defaul" onclick="downloadFile()"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> 下载文件</button>
+                    </div>
+                </form>
+                <ul class="nav navbar-nav navbar-right">
+                    <li>  
+                        <div class="switch navbar-btn" id="sfswitch">
+                            <span class="glyphicon glyphicon-tag" aria-hidden="true"></span> 选择模式：
+                            <input type="checkbox" checked />
+                        </div>
+                    </li> 
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span> 常用操作 <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="javascript:void(0)" onclick="showrename()"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span> 重命名</a></li>
+                            <li><a href="javascript:void(0)" onclick="deleteFile()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> 删除</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!-- /.navbar-collapse -->
+        </div><!-- /.container-fluid -->
+    </nav>
+    <!-- 上传文件模态框（Modal） -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">文件上传</h4>
+                </div>
+                <div class="modal-body">
+                        <div class="form-group" id="file_container">
+                            <input type="file" name="uploadfile" id="uploadfile" multiple class="file" />
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+    
+    <!-- 打开文件时模态框 -->
+    <div class="modal fade bs-example-modal-lg" id="fileModal" tabindex="-1" role="dialog" aria-labelledby="fileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="fileModalLabel">文件名</h4>
+                </div>
+                <div class="modal-body" id="fmodalbody">
+                </div>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+    <div style="margin-top:50px"> 
+        <div class="panel panel-default" >
+            <div class="panel-heading" style="padding:0px">
+                <ol class="breadcrumb" id="filepath" style="margin:0px"></ol>
+            </div>
+            <div class="panel-body">
+                    <div class="row clearfix" id="fileList">
+                    </div>
+                </div>
+            <div class="panel-footer" id="filecount">选中文件/当前总文件：</div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="web/js/filemanager.js"></script>
+</body>
+</html>
