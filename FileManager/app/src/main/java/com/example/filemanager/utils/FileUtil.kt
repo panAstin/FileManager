@@ -42,57 +42,47 @@ object FileUtil {
         return formetFileSize(blockSize)
     }
 
-    /**
-     * 获取目录下文件修改时间存入json
-     * @param path 文件路径
-     * @return 文件jsonobject
-     */
-    fun getFiletoJson(path: String):JSONObject{
-        val dict = File(path)
-        val filejson = JSONObject()
-        if (!dict.exists()){
-            dict.mkdir()
-        }
-        for (f in dict.listFiles()){
-            filejson.put(f.name,f.lastModified())
-        }
-        return filejson
-    }
 
     /**
      * 根据json获取指定目录下待输出同步文件
-     * @param filePath 文件夹路径
-     * @param jsonObject 已知jsonobject
+     * @param filesjson 已知jsonobject
      * @return 待同步文件列表
      */
     @JvmOverloads
-    fun getoutSyncFiles(jsonObject: JSONObject=JSONObject()):ArrayList<File>{
+    fun getSyncFiles(filesjson: JSONObject=JSONObject()):HashMap<String,JSONObject>{
         val syncdict = File(SYNC_PATH)
-        val syncfiles = ArrayList<File>()
+        val syncfiles = JSONObject()
+        val syncmap = HashMap<String,JSONObject>()
         if (!syncdict.exists()){
             syncdict.mkdir()
         }
-        syncdict.listFiles().filterTo(syncfiles) { !jsonObject.has(it.name) or (jsonObject.getLong(it.name) < it.lastModified()) }
-        return syncfiles
+        for (file in syncdict.listFiles()){
+            //需要发送的文件
+            if (!filesjson.has(file.name) or (filesjson.getLong(file.name) < file.lastModified())){
+                syncfiles.put(file.name,file.lastModified())
+            }else if(filesjson.has(file.name) and (filesjson.getLong(file.name) == file.lastModified())){
+                //移除相同的文件
+                filesjson.remove(file.name)
+            }
+        }
+        syncmap.put("sendfiles", syncfiles)
+        syncmap.put("receivefiles",filesjson)
+        return syncmap
     }
 
     /**
-     * 根据json获取指定目录下待获取同步文件
-     * @param filePath 文件夹路径
+     * 根据json获取指定目录下待获取同步文件列表
      * @param jsonObject 已知jsonobject
-     * @return 待同步文件jsonobject
+     * @return 文件列表
      */
-    fun getinSyncFiles(jsonObject: JSONObject):JSONObject{
-        val syncdict = File(SYNC_PATH)
-        if (!syncdict.exists()){
-            syncdict.mkdir()
+    fun getSyncFilelist(jsonObject: JSONObject):ArrayList<File>{
+        val synclist = ArrayList<File>()
+
+        for (fname in jsonObject.keys()){
+            val f = File(SYNC_PATH + File.separator + fname)
+            synclist.add(f)
         }
-        for (f in syncdict.listFiles()){
-            if (jsonObject.has(f.name) and (jsonObject.getLong(f.name) <= f.lastModified())){
-                jsonObject.remove(f.name)
-            }
-        }
-        return jsonObject
+        return synclist
     }
 
     /**

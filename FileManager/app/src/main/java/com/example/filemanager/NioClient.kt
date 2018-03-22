@@ -2,7 +2,10 @@ package com.example.filemanager
 
 import android.util.Log
 import com.example.filemanager.activities.MainActivity
+import com.example.filemanager.utils.FileUtil
+import com.example.filemanager.utils.HttpClientUtil
 import com.example.filemanager.utils.ServerUtil
+import org.json.JSONObject
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -93,6 +96,10 @@ class NioClient(private var address: InetAddress){
                     }else{
                         doWrite(channel,"ok")
                         channel.close()
+                        val map = FileUtil.getSyncFiles()
+                        val httpclient = HttpClientUtil()
+                        httpclient.getSyncList(content,map["sendfiles"]!!)
+
                     }
                     key.interestOps(SelectionKey.OP_READ)
                 }

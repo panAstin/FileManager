@@ -16,8 +16,8 @@ import org.json.JSONObject
  * Http客户端
  */
 class HttpClientUtil{
-    var mOkHttpClient:OkHttpClient? = null
-    val JSON_TYPE = "application/json"
+    private var mOkHttpClient:OkHttpClient? = null
+    private val JSON_TYPE = MediaType.parse("application/json; charset=utf-8")
 
     /**
      * Get请求
@@ -41,19 +41,22 @@ class HttpClientUtil{
         call.enqueue(callback)
     }
 
-    private fun getSyncList(url: String,jsonObject: JSONObject){
-        val mbody = RequestBody.create(MediaType.parse(JSON_TYPE+"; charset=utf-8"),jsonObject.toString())
+    fun getSyncList(url: String,jsonObject: JSONObject){
+        val mbody = RequestBody.create(JSON_TYPE,jsonObject.toString())
         val requet = Request.Builder()
-                .url(url)
+                .url(url+ "/getsyncfiles")
                 .post(mbody)
                 .build()
         postAsynHttp(requet,object :Callback{
-            override fun onResponse(call: Call?, response: Response?) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            override fun onResponse(call: Call?, response: Response) {
+                Log.i("FileSync","获取同步文件成功")
+                val filesjson = response.body()?.string()
+                val flist = FileUtil.getSyncFilelist(JSONObject(filesjson))
+                postAsynFile(url+"/sendfiles",flist)
             }
 
             override fun onFailure(call: Call?, e: IOException?) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+                Log.e("FileSync","获取同步文件失败  "+e)
             }
 
         })
@@ -62,7 +65,7 @@ class HttpClientUtil{
     /**
      * 上传文件
      */
-    private fun postAsynFile(url: String,filelist:ArrayList<File>) {
+    fun postAsynFile(url: String,filelist:ArrayList<File>) {
         val mbody = MultipartBody.Builder().setType(MultipartBody.FORM)
         var i = 1
         for (file in filelist){
@@ -79,12 +82,20 @@ class HttpClientUtil{
                 .build()
         postAsynHttp(request,object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-
+                Log.e("FileSync","发送同步文件失败  "+e)
             }
 
             @Throws(IOException::class)
             override fun onResponse(call: Call, response: Response) {
-                Log.i("wangshu", response.body()?.string())
+                Log.i("FileSync","发送请求成功")
+                val jsonstr = response.body()?.string()
+                Log.i("FileSync",jsonstr)
+                val jsonobject = JSONObject(jsonstr)
+                if(jsonobject["message"]=="success"){
+                    Log.i("FileSync","发送同步文件成功")
+                }else{
+                    Log.e("FileSync","发送同步文件失败")
+                }
             }
         })
     }
@@ -92,8 +103,7 @@ class HttpClientUtil{
     /**
      * 下载文件
      */
-    private fun downloadAsynFile() {
-        val url = "http://img.my.csdn.net/uploads/201603/26/1458988468_5804.jpg"
+    fun downloadAsynFile(url: String) {
         getAsynHttp(url,object : Callback {
             override fun onFailure(call: Call, e: IOException) {
 
@@ -124,7 +134,7 @@ class HttpClientUtil{
     /**
      * 多类型请求
      */
-    private fun sendMultipart(url: String,jsonObject: JSONObject) {
+    fun sendMultipart(url: String,jsonObject: JSONObject) {
         val requestBody = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("title", "wangshu")

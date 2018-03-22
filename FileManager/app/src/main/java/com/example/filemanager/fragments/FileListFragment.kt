@@ -423,11 +423,10 @@ class FileListFragment : Fragment() {
         mFiles = ArrayList()
         Pathnotes.clear()
         val file = File(path)
-        val files = file.listFiles()
         val strpath = path.substring(path.indexOf("0"),path.length)
         Pathnotes = strpath.split("/") as ArrayList<String>  //分割路径
         pathadapter?.notifyDataSetChanged()          //更新路径
-        files
+        file.listFiles()
                 .filterNot {
                     it.isHidden      //筛选隐藏文件
                 }
