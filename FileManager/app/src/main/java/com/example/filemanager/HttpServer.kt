@@ -4,9 +4,7 @@ import android.content.res.AssetManager
 import android.os.Environment
 import android.util.Log
 import com.example.filemanager.response.RequestControlHandler
-import com.example.filemanager.response.RequestDownloadHandler
-import com.example.filemanager.response.RequestListfileHandler
-import com.example.filemanager.response.RequestUploadHandler
+import com.example.filemanager.response.RequestTransferHandler
 import com.example.filemanager.utils.FileUtil
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONObject
@@ -17,7 +15,7 @@ import java.io.InputStream
 
 /**
  * Created by 11046 on 2017/12/26.
- * 服务器
+ * NanoHTTPD服务器
  */
 class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:Int):NanoHTTPD(port){
     companion object {
@@ -54,7 +52,7 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
         try {
             when(uri){
                 "listfile" ->{           //文件展示
-                    val jsonarr = RequestListfileHandler().listFiles(session!!.parms)
+                    val jsonarr = RequestControlHandler.listFiles(session!!.parms)
                     return if(jsonarr != null){
                         Response(Response.Status.OK, MIME_JSON,jsonarr.toString())
                     }else{
@@ -63,7 +61,7 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                 }
                 "upload" ->{    //文件上传
                     val ja = JSONObject()
-                    if(RequestUploadHandler(mode).upload(session!!.parms,files)){
+                    if(RequestTransferHandler.upload(session!!.parms,files,mode)){
                         ja.put("message","Success")
                     }else{
                         ja.put("message","Fail")
@@ -82,7 +80,7 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                     }
                 }
                 "download" -> {   //文件下载
-                    val path = RequestDownloadHandler().download(session!!.parms)
+                    val path = RequestTransferHandler.download(session!!.parms)
                     if(path != null){
                         val response = Response(Response.Status.OK,"multipart/form-data", File(path).inputStream())
                         response.addHeader("Content-disposition", String.format("attachment; filename=\"%s\"", File(path).name))
@@ -95,7 +93,7 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
 
                 "delete" -> {  //文件删除
                     val ja = JSONObject()
-                    if(RequestControlHandler().delete(session!!.parms)){
+                    if(RequestControlHandler.delete(session!!.parms)){
                         ja.put("result","Success")
                     }else{
                         ja.put("result","Fail")
@@ -105,7 +103,7 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
 
                 "rename" -> {  //重命名
                     val ja = JSONObject()
-                    if(RequestControlHandler().rename(session!!.parms)){
+                    if(RequestControlHandler.rename(session!!.parms)){
                         ja.put("result","Success")
                     }else{
                         ja.put("result","Fail")

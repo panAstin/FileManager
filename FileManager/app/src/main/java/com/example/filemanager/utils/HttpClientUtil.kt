@@ -16,19 +16,18 @@ import org.json.JSONObject
  * Http客户端
  */
 class HttpClientUtil{
-    private var mOkHttpClient:OkHttpClient? = null
     private val JSON_TYPE = MediaType.parse("application/json; charset=utf-8")
 
     /**
      * Get请求
      */
     private fun getAsynHttp(url:String,callback: Callback) {
-        mOkHttpClient = OkHttpClient()
+        val mOkHttpClient = OkHttpClient()
         val requestBuilder = Request.Builder().url(url)
         //可以省略，默认是GET请求
         requestBuilder.method("GET", null)
         val request = requestBuilder.build()
-        val mcall = mOkHttpClient!!.newCall(request)
+        val mcall = mOkHttpClient.newCall(request)
         mcall.enqueue(callback)
     }
 
@@ -36,23 +35,23 @@ class HttpClientUtil{
      * Post请求
      */
     private fun postAsynHttp(request: Request,callback: Callback) {
-        mOkHttpClient = OkHttpClient()
-        val call = mOkHttpClient!!.newCall(request)
+        val mOkHttpClient = OkHttpClient()
+        val call = mOkHttpClient.newCall(request)
         call.enqueue(callback)
     }
 
-    fun getSyncList(url: String,jsonObject: JSONObject){
+    fun getSyncList(url: String,jsonObject: JSONObject):JSONObject{
         val mbody = RequestBody.create(JSON_TYPE,jsonObject.toString())
         val requet = Request.Builder()
                 .url(url+ "/getsyncfiles")
                 .post(mbody)
                 .build()
+        var result = JSONObject()
         postAsynHttp(requet,object :Callback{
             override fun onResponse(call: Call?, response: Response) {
                 Log.i("FileSync","获取同步文件成功")
                 val filesjson = response.body()?.string()
-                val flist = FileUtil.getSyncFilelist(JSONObject(filesjson))
-                postAsynFile(url+"/sendfiles",flist)
+                result = JSONObject(filesjson)
             }
 
             override fun onFailure(call: Call?, e: IOException?) {
@@ -60,6 +59,7 @@ class HttpClientUtil{
             }
 
         })
+        return result
     }
 
     /**
@@ -103,17 +103,17 @@ class HttpClientUtil{
     /**
      * 下载文件
      */
-    fun downloadAsynFile(url: String) {
+    fun downloadAsynFile(url: String,file: File) {
         getAsynHttp(url,object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-
+                Log.d("syncfile", "下载请求失败:" + e)
             }
 
             override fun onResponse(call: Call, response: Response) {
                 val inputStream = response.body()!!.byteStream()
                 val fileOutputStream: FileOutputStream?
                 try {
-                    fileOutputStream = FileOutputStream(File("/sdcard/wangshu.jpg"))
+                    fileOutputStream = FileOutputStream(file)
                     val buffer = ByteArray(2048)
                     var len = inputStream.read(buffer)
                     while (len != -1) {
@@ -122,11 +122,11 @@ class HttpClientUtil{
                     }
                     fileOutputStream.flush()
                 } catch (e: IOException) {
-                    Log.i("wangshu", "IOException")
+                    Log.i("syncfile", "IOException")
                     e.printStackTrace()
                 }
 
-                Log.d("wangshu", "文件下载成功")
+                Log.d("syncfile", "文件下载成功")
             }
         })
     }

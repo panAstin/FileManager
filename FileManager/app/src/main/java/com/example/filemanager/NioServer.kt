@@ -1,6 +1,7 @@
 package com.example.filemanager
 
 import com.example.filemanager.activities.MainActivity
+import com.example.filemanager.utils.FileUtil
 import com.example.filemanager.utils.ServerUtil
 import java.io.IOException
 import java.net.InetAddress
@@ -70,8 +71,10 @@ class NioServer(private var address: InetAddress){
                                 doWrite(channel, ServerUtil.ip + MainActivity.CONFIG["port"])
                             }else if(content == "ok") {
                                 break
-                            }else{
+                            }else if(ServerUtil.isIP(content)){
                                 doWrite(channel,"ok")
+                                channel.close()
+                                FileUtil.doFileSync(content)
                             }
                         }
                         // 写完就把状态关注去掉，否则会一直触发写事件(改变自身关注事件)

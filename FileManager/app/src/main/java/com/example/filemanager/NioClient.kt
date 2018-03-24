@@ -93,13 +93,10 @@ class NioClient(private var address: InetAddress){
                     println(content)
                     if (content == "ok"){
                         channel.close()
-                    }else{
+                    }else if(ServerUtil.isIP(content)){
                         doWrite(channel,"ok")
                         channel.close()
-                        val map = FileUtil.getSyncFiles()
-                        val httpclient = HttpClientUtil()
-                        httpclient.getSyncList(content,map["sendfiles"]!!)
-
+                        FileUtil.doFileSync(content)
                     }
                     key.interestOps(SelectionKey.OP_READ)
                 }

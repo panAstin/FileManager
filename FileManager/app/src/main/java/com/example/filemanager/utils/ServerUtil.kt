@@ -44,6 +44,14 @@ class ServerUtil(var context: Context?){
             }
             return ""
         }
+
+        /**
+         * 判断是否为IP+port
+         */
+        fun isIP(str:String):Boolean{
+            val rexp = "((?:(?:25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))\\.){3}(?:25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?[1-9])))(:\\d)*)"
+            return  str.matches(Regex(rexp))
+        }
     }
 
     private var mService:Intent? = null

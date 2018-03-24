@@ -42,6 +42,28 @@ object FileUtil {
         return formetFileSize(blockSize)
     }
 
+    /**
+     * 根据服务器地址执行同步
+     */
+    fun doFileSync(address:String){
+        val map = getSyncFiles()
+        val httpclient = HttpClientUtil()
+        val resultjson = httpclient.getSyncList(address,map["sendfiles"]!!)
+        val filetosend = JSONObject(resultjson["sendfiles"].toString())
+        val filetoreceive = JSONObject(resultjson["receive"].toString())
+        Log.i("syncfile","同步开始")
+        try {
+            httpclient.postAsynFile(address+"/syncupload", getSyncFilelist(filetosend))
+            for (file in getSyncFilelist(filetoreceive)){
+                httpclient.downloadAsynFile(address+"/syncdownload/" + file.name,file)
+            }
+        }catch (e:Exception){
+            e.printStackTrace()
+            Log.e("syncfile","同步出错："+e.toString())
+        }
+        Log.i("syncfile","同步结束")
+    }
+
 
     /**
      * 根据json获取指定目录下待输出同步文件
@@ -58,11 +80,14 @@ object FileUtil {
         }
         for (file in syncdict.listFiles()){
             //需要发送的文件
-            if (!filesjson.has(file.name) or (filesjson.getLong(file.name) < file.lastModified())){
-                syncfiles.put(file.name,file.lastModified())
-            }else if(filesjson.has(file.name) and (filesjson.getLong(file.name) == file.lastModified())){
-                //移除相同的文件
-                filesjson.remove(file.name)
+            when {
+                !filesjson.has(file.name) -> syncfiles.put(file.name,file.lastModified())
+                filesjson.getLong(file.name) < file.lastModified() -> {
+                    syncfiles.put(file.name,file.lastModified())
+                    filesjson.remove(file.name)
+                }
+                filesjson.getLong(file.name) == file.lastModified() -> //移除相同的文件
+                    filesjson.remove(file.name)
             }
         }
         syncmap.put("sendfiles", syncfiles)
