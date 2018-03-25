@@ -2,7 +2,9 @@ package com.example.filemanager.response
 
 import android.util.Log
 import com.example.filemanager.utils.FileUtil
+import org.json.JSONObject
 import java.io.File
+import java.io.IOException
 import java.net.URLDecoder
 
 /**
@@ -11,11 +13,25 @@ import java.net.URLDecoder
  */
 object RequestTransferHandler{
     /**
+     * 获取同步文件
+     */
+    fun getsynclist(params: Map<String, String>):JSONObject?{
+        Log.i("Nanoserver","Params"+params.toString())
+        var result:JSONObject? = null
+        val syncjson = URLDecoder.decode(params[""],"utf-8")
+        val filejson = JSONObject(syncjson)
+        val syncmap = FileUtil.getSyncFiles(filejson)
+        if(!syncmap.isEmpty()){
+            result = JSONObject(syncmap)
+        }
+        return result
+    }
+    /**
      * 上传文件
      */
     fun upload(params:Map<String,String>,files:Map<String,String>,mode: Int):Boolean {
         val uploadpath = params["path"]
-        var targetFilepath = when (mode) {
+        val targetdict = when (mode) {
             0 -> {
                 FileUtil.ROOT_PATH + "/Download"
             }
@@ -31,11 +47,34 @@ object RequestTransferHandler{
                 val tempFilepath = files[paramKey]
                 Log.i("file", tempFilepath)
                 val tempFile = File(tempFilepath)
-                targetFilepath += entry.value
-                if (File(targetFilepath).exists()) {
+                val targetpath = targetdict + entry.value
+                if (File(targetpath).exists()) {
                     return false
                 } else {
-                    moveFile(tempFile, targetFilepath)
+                    moveFile(tempFile, targetpath)
+                }
+            }
+        }
+        return true
+    }
+
+    /**
+     * 上传同步文件
+     */
+    fun syncupload(params:Map<String,String>,files:Map<String,String>):Boolean{
+        for (entry in params.entries) {
+            val paramKey = entry.key
+            Log.i("file", paramKey)
+            if (paramKey == "uploadfile") {
+                Log.i("file", entry.value)
+                val tempFilepath = files[paramKey]
+                Log.i("file", tempFilepath)
+                val targetpath = FileUtil.SYNC_PATH + File.separator + entry.value
+                try {
+                    FileUtil.copy(tempFilepath!!,targetpath)
+                }catch (e:IOException){
+                    Log.e("syncupload","出错:"+e)
+                    return false
                 }
             }
         }

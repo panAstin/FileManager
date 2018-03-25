@@ -449,7 +449,7 @@ class FileListFragment : Fragment() {
         }
         Handler().postDelayed( { //消息处理延迟执行
             fmadapter?.notifyDataSetChanged()
-        },800)
+        },1000)
     }
 
     //提示信息

@@ -48,7 +48,7 @@ object FileUtil {
     fun doFileSync(address:String){
         val map = getSyncFiles()
         val httpclient = HttpClientUtil()
-        val resultjson = httpclient.getSyncList(address,map["sendfiles"]!!)
+        val resultjson = httpclient.getSyncList(address+"/synclist",map["sendfiles"]!!)
         val filetosend = JSONObject(resultjson["sendfiles"].toString())
         val filetoreceive = JSONObject(resultjson["receive"].toString())
         Log.i("syncfile","同步开始")
@@ -254,16 +254,14 @@ object FileUtil {
      * 获取文件MIMETYPE
      * @param file 文件
      */
-    fun getType(file: File): FileType? {
-        return when(ExFile(file.path).getTypeID()){
-            2 -> FileType.text
-            3 -> FileType.music
-            4 -> FileType.video
-            5 -> FileType.zip
-            6 -> FileType.apk
-            7 -> FileType.photo
-            else -> null
-        }
+    fun getType(file: File): FileType? = when(ExFile(file.path).getTypeID()){
+        2 -> FileType.text
+        3 -> FileType.music
+        4 -> FileType.video
+        5 -> FileType.zip
+        6 -> FileType.apk
+        7 -> FileType.photo
+        else -> null
     }
 
     /**

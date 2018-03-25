@@ -91,7 +91,7 @@ class HttpClientUtil{
                 val jsonstr = response.body()?.string()
                 Log.i("FileSync",jsonstr)
                 val jsonobject = JSONObject(jsonstr)
-                if(jsonobject["message"]=="success"){
+                if(jsonobject["message"]=="Success"){
                     Log.i("FileSync","发送同步文件成功")
                 }else{
                     Log.e("FileSync","发送同步文件失败")
