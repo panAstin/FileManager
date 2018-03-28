@@ -3,9 +3,7 @@ package com.example.filemanager
 import android.util.Log
 import com.example.filemanager.activities.MainActivity
 import com.example.filemanager.utils.FileUtil
-import com.example.filemanager.utils.HttpClientUtil
 import com.example.filemanager.utils.ServerUtil
-import org.json.JSONObject
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -64,7 +62,7 @@ class NioClient(private var address: InetAddress){
                         key.interestOps(SelectionKey.OP_READ);*/
                         sc.register(selector, SelectionKey.OP_READ)
                         //    new Thread(new DoWrite(channel)).start();
-                        if(MainActivity.SERVER_STATU){
+                        if(MainActivity.SERVER_STATUS){
                             doWrite(channel, ServerUtil.ip + MainActivity.CONFIG["port"])
                         }else{
                             doWrite(channel,"getaddress")

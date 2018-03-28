@@ -1,10 +1,10 @@
 package com.example.filemanager
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.example.filemanager.utils.FileUtil
 import com.example.filemanager.utils.MemoryCacheUtils
+import com.example.filemanager.utils.ThreadPoolUtil
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -70,29 +70,31 @@ class ExFile(path:String): File(path) {
         }
     }
 
-    fun initIcon(context: Context){
+    fun initIcon(){
             if (typeID<7) {
                 val iconincache = getCache().getBitmapFromMemory(typeID)
                 icon = if(iconincache!=null){
                     iconincache as Bitmap
                 }else{
-                    val iconbitmap = BitmapFactory.decodeResource(context.resources, Icons[typeID])
+                    val iconbitmap = BitmapFactory.decodeResource(AppManager.getContext().resources, Icons[typeID])
                     getCache().setBitmapToMemory(typeID,iconbitmap)
                     iconbitmap
                 }
         }
     }
 
-    fun getInitailed(context:Context):ExFile{
-        this.initIcon(context)
-        this.setSize(FileUtil.getAutoFileOrFilesSize(this.path))
-        return this
-    }
-
     init {
-        this.initDate()
-        this.size = "计算中.."
+        initDate()
         initType()
+        initIcon()
+        this.size = "计算中.."
+        ThreadPoolUtil.getThreadPool().execute{
+            try {
+                this.setSize(FileUtil.getAutoFileOrFilesSize(this.path))
+            }catch (e:Exception){
+                e.stackTrace
+            }
+        }
     }
 
 }

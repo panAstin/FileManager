@@ -20,7 +20,6 @@ import com.example.filemanager.adapters.fmAdapter.Companion.selectFlag
 import com.example.filemanager.adapters.pathAdapter
 import com.example.filemanager.utils.*
 import java.io.File
-import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
 
 /**
@@ -138,7 +137,7 @@ class FileListFragment : Fragment() {
                             if (-1 == result){
                                 try {
                                     while (i> -1 ) {
-                                        if (FileUtil.deleteFile(exfiles.valueAt(i),context)) {
+                                        if (FileUtil.deleteFile(exfiles.valueAt(i))) {
                                             fmadapter!!.removeItem(exfiles.keyAt(i)) //移除列表项
                                         }
                                         i--
@@ -198,7 +197,7 @@ class FileListFragment : Fragment() {
                                 // TODO Auto-generated method stub
                                 val newfilepath = "$currentpath/$result/"       //获取根目录
                                 FileUtil.createMkdir(newfilepath)
-                                val newfb = ExFile(newfilepath).getInitailed(context)
+                                val newfb = ExFile(newfilepath)
                                 fmadapter!!.addItem(newfb)
                             }
                         },true)
@@ -257,8 +256,8 @@ class FileListFragment : Fragment() {
                                     modifyName += "("+i.toString()+")"
                                     newFile = File(fpath + "/" + modifyName)
                                 }
-                                if (FileUtil.renameFile(file,newFile,context)) {
-                                    mFiles!![position] = ExFile(newFile.path).getInitailed(context)
+                                if (FileUtil.renameFile(file,newFile)) {
+                                    mFiles!![position] = ExFile(newFile.path)
                                     fmadapter!!.notifyItemChanged(position)
                                     displaySnackbar("重命名成功！")
                                 } else {
@@ -287,7 +286,7 @@ class FileListFragment : Fragment() {
                         }
                         if(zipresult){
                             fmadapter?.changeSelecFlag()
-                            fmadapter!!.addItem(ExFile(zippath).getInitailed(context))
+                            fmadapter!!.addItem(ExFile(zippath))
                             displaySnackbar("压缩成功")
                         }else{
                             displaySnackbar("压缩失败")
@@ -424,7 +423,7 @@ class FileListFragment : Fragment() {
         Pathnotes.clear()
         val file = File(path)
         val strpath = path.substring(path.indexOf("0"),path.length)
-        Pathnotes = strpath.split("/") as ArrayList<String>  //分割路径
+        Pathnotes.addAll(strpath.split("/"))
         pathadapter?.notifyDataSetChanged()          //更新路径
         file.listFiles()
                 .filterNot {
@@ -432,14 +431,6 @@ class FileListFragment : Fragment() {
                 }
                 .forEach {
                     val ef  = ExFile(it.path)
-                    ef.initIcon(context)
-                    ThreadPoolUtil.getThreadPool().execute{
-                        try {
-                            ef.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
-                        }catch (e:Exception){
-                            e.stackTrace
-                        }
-                    }
                     mFiles!!.add(ef) }
 
         fmadapter?.setListData(mFiles!!)
@@ -477,7 +468,7 @@ class FileListFragment : Fragment() {
                     }
                     if (key in it.name) {
                         val ef = ExFile(it.path)
-                        ef.initIcon(context)
+                        ef.initIcon()
                         ThreadPoolUtil.getThreadPool().execute {
                             try {
                                 ef.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
@@ -565,10 +556,10 @@ class FileListFragment : Fragment() {
                 }
                 msg.arg1 == 2 -> {
                     val targetpath = msg.data.getString("path")
-                    fmadapter!!.addItem(ExFile(targetpath).getInitailed(context))
+                    fmadapter!!.addItem(ExFile(targetpath))
 
                     if(MediaUtil.isMediaFile(targetpath)){
-                        MediaUtil.sendScanFileBroadcast(context,targetpath)
+                        MediaUtil.sendScanFileBroadcast(targetpath)
                     }
                     displaySnackbar("粘贴成功")
                 }

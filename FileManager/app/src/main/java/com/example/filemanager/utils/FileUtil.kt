@@ -18,7 +18,7 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
 object FileUtil {
-    val ROOT_PATH = Environment.getExternalStorageDirectory().path    //根目录
+    val ROOT_PATH = Environment.getExternalStorageDirectory().path!!    //根目录
     val SYNC_PATH = ROOT_PATH + File.separator + "syncdict"    //同步目录
     /**
      * 调用此方法自动计算指定文件或指定文件夹的大小
@@ -200,22 +200,17 @@ object FileUtil {
      * @param context
      * @param file 文件
      */
-    @JvmOverloads
-    fun deleteFile(file: File,context: Context? = null):Boolean{
+    fun deleteFile(file: File):Boolean{
         if(file.isDirectory){  //文件夹
             val files = file.listFiles()
-            if(context != null){
-                for (mfile in files){
-                    deleteFile(mfile,context)
-                }
+            for (mfile in files){
+                deleteFile(mfile)
             }
             return file.delete()
         }
         if (file.isFile){
             FileSortUtil.deleteFile(file)
-            if(context != null){
-                MediaUtil.removeMediaFromLib(context, file.path)       //从多媒体库中移除
-            }
+            MediaUtil.removeMediaFromLib(file.path)       //从多媒体库中移除
             file.delete()
             return !file.exists()
         }
@@ -228,12 +223,9 @@ object FileUtil {
      * @param oldfile 原文件
      * @param newfile 重命名后文件
      */
-    @JvmOverloads
-    fun renameFile(oldfile: File,newfile:File,context: Context? = null):Boolean{
+    fun renameFile(oldfile: File,newfile:File):Boolean{
         if(oldfile.renameTo(newfile)){
-            if (MediaUtil.isMediaFile(newfile.path)&&context!=null){
-                MediaUtil.renameMediaFile(context, oldfile.path, newfile.path)  //修改多媒体库中文件名
-            }
+            MediaUtil.renameMediaFile(oldfile.path, newfile.path)  //修改多媒体库中文件名
             return true
         }
         return false

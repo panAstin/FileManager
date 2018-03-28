@@ -85,7 +85,7 @@ class SortActivity : AppCompatActivity() {
         val exfiles = FileSortUtil().getFilesByType(FileType.getFileTypeByOrdinal(sort))
         if(exfiles != null){
           for (ef in exfiles){
-              ef.initIcon(applicationContext)
+              ef.initIcon()
               ThreadPoolUtil.getThreadPool().execute{
                   try {
                       ef.setSize(FileUtil.getAutoFileOrFilesSize(ef.path))
@@ -119,7 +119,7 @@ class SortActivity : AppCompatActivity() {
                             if (-1 == result){
                                 try {
                                     while (i> -1 ) {
-                                        if (FileUtil.deleteFile(filebeans.valueAt(i),this@SortActivity)) {
+                                        if (FileUtil.deleteFile(filebeans.valueAt(i))) {
                                             fmadapter!!.removeItem(filebeans.keyAt(i)) //移除列表项
                                         }
                                         i--
@@ -189,8 +189,8 @@ class SortActivity : AppCompatActivity() {
                                     modifyName += "("+i.toString()+")"
                                     newFile = File(fpath + "/" + modifyName)
                                 }
-                                if (FileUtil.renameFile(file,newFile,this@SortActivity)) {
-                                    sFiles!![position] = ExFile(newFile.path).getInitailed(this@SortActivity)
+                                if (FileUtil.renameFile(file,newFile)) {
+                                    sFiles!![position] = ExFile(newFile.path)
                                     fmadapter!!.notifyItemChanged(position)
                                     displaySnackbar("重命名成功！")
                                 } else {

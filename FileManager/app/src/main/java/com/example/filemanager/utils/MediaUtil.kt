@@ -11,6 +11,7 @@ import android.media.MediaScannerConnection.OnScanCompletedListener
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import com.example.filemanager.AppManager
 import com.example.filemanager.activities.MainActivity
 import java.io.File
 
@@ -26,12 +27,14 @@ object MediaUtil {
      * 通过广播进行多媒体库的扫描
      * 对方成功接收广播并处理条件  文件必须存在，文件路径必须以Environment.getExternalStorageDirectory().getPath() 的返回值开头
      */
-    fun sendScanFileBroadcast(context: Context, filePath: String) {
+    fun sendScanFileBroadcast(filePath: String) {
         val file = File(filePath)
         var intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file))
-        context.sendBroadcast(intent)
+        AppManager.getContext().sendBroadcast(intent)
+        //context.sendBroadcast(intent)
         intent = Intent("com.11046")
-        context.sendBroadcast(intent)              //发送广播进行列表更新
+        AppManager.getContext().sendBroadcast(intent)
+        //context.sendBroadcast(intent)              //发送广播进行列表更新
     }
 
     /**
@@ -53,35 +56,35 @@ object MediaUtil {
     /**
      * 从库中移除文件
      */
-    private fun removeImageFromLib(context: Context, filePath: String): Int {
-        return context.contentResolver.delete(Images.Media.EXTERNAL_CONTENT_URI,
+    private fun removeImageFromLib(filePath: String): Int {
+        return AppManager.getContext().contentResolver.delete(Images.Media.EXTERNAL_CONTENT_URI,
                 Images.Media.DATA + "=?", arrayOf(filePath))
     }
 
-    private fun removeAudioFromLib(context: Context, filePath: String): Int {
-        return context.contentResolver.delete(Audio.Media.EXTERNAL_CONTENT_URI,
+    private fun removeAudioFromLib(filePath: String): Int {
+        return AppManager.getContext().contentResolver.delete(Audio.Media.EXTERNAL_CONTENT_URI,
                 Audio.Media.DATA + "=?", arrayOf(filePath))
     }
 
-    private fun removeVideoFromLib(context: Context, filePath: String): Int {
-        return context.contentResolver.delete(Video.Media.EXTERNAL_CONTENT_URI,
+    private fun removeVideoFromLib(filePath: String): Int {
+        return AppManager.getContext().contentResolver.delete(Video.Media.EXTERNAL_CONTENT_URI,
                 Video.Media.DATA + "=?", arrayOf(filePath))
 
     }
 
-    fun removeMediaFromLib(context: Context, filePath: String): Int {
+    fun removeMediaFromLib(filePath: String): Int {
         var mimeType = FileUtil.getMIMEType(File(filePath))
         var affectedRows = 0
         if ("*/*" != mimeType) {
             mimeType = mimeType.toLowerCase()
             affectedRows = when{
-                isImage(mimeType) -> removeImageFromLib(context, filePath)
-                isAudio(mimeType) -> removeAudioFromLib(context, filePath)
-                isVideo(mimeType) -> removeVideoFromLib(context, filePath)
+                isImage(mimeType) -> removeImageFromLib(filePath)
+                isAudio(mimeType) -> removeAudioFromLib(filePath)
+                isVideo(mimeType) -> removeVideoFromLib(filePath)
                 else -> 0
             }
         }
-        sendScanFileBroadcast(context, filePath)
+        sendScanFileBroadcast(filePath)
         return affectedRows
     }
 
@@ -111,14 +114,13 @@ object MediaUtil {
 
     /**
      * 重命名媒体文件
-     * @param context
      * @param srcPath
      * @param destPath
      * @return
      */
-    fun renameMediaFile(context: Context, srcPath: String, destPath: String): Int {
-        removeMediaFromLib(context, srcPath)
-        sendScanFileBroadcast(context, destPath)
+    fun renameMediaFile(srcPath: String, destPath: String): Int {
+        removeMediaFromLib(srcPath)
+        sendScanFileBroadcast(destPath)
         return 0
     }
 

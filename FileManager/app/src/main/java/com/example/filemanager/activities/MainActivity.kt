@@ -29,6 +29,7 @@ import android.text.TextUtils
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import com.example.filemanager.AppManager
 import com.example.filemanager.NioClient
 import com.example.filemanager.NioServer
 import com.example.filemanager.utils.FileSortUtil
@@ -44,7 +45,7 @@ import kotlin.collections.ArrayList
 class MainActivity : AppCompatActivity() {
     companion object {
         var CONFIG = HashMap<String,Any>()   //全局设置
-        var SERVER_STATU = false           //服务器运行状态
+        var SERVER_STATUS = false           //服务器运行状态
     }
     private val REQUEST_CODE = 11
     private var tablayout: TabLayout? = null
@@ -75,6 +76,7 @@ class MainActivity : AppCompatActivity() {
         //}
         checkPermissions()
 
+        AppManager.getInstance(this)
         initConf()
         if(CONFIG["synflag"]!! as Boolean){
             Log.i("wifp2p","start")
@@ -291,7 +293,7 @@ class MainActivity : AppCompatActivity() {
                     val serverBtn = v as Button
                     if(!ServerUtil.SWITCH){
                         this.startService(serverUtil?.getservice())
-                        SERVER_STATU = true
+                        SERVER_STATUS = true
                         val ipformat = getString(R.string.httpadd)
                         if(!TextUtils.isEmpty(ServerUtil.ip)){
                             val port = CONFIG["port"]
@@ -299,11 +301,10 @@ class MainActivity : AppCompatActivity() {
                         }
                         serverBtn.text = getString(R.string.stopserver)
                         SnackbarUtil.short(v,"服务器启动")
-                        stopFileSync()
                     }
                     else{
                         this.stopService(serverUtil?.getservice())
-                        SERVER_STATU = false
+                        SERVER_STATUS = false
                         address_tv?.text = getText(R.string.noserver)
                         serverBtn.text = getString(R.string.startserver)
                         SnackbarUtil.short(v,"服务器停止")
