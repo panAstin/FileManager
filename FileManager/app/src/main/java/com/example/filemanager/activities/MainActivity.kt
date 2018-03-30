@@ -257,6 +257,7 @@ class MainActivity : AppCompatActivity() {
                 resourceType ->
             // Update the device name with the human-friendly version from
             // the DnsTxtRecord, assuming one arrived.
+            Log.i("wifip2p","service:name:"+instanceName+"  type:"+resourceType)
             resourceType.deviceName = if (SERVICE_PARAM
                             .containsKey(resourceType.deviceAddress))
                 SERVICE_PARAM[resourceType.deviceAddress]
