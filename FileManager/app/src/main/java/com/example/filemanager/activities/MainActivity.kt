@@ -18,6 +18,7 @@ import android.view.WindowManager
 import org.jetbrains.anko.find
 import com.example.filemanager.adapters.FragmentPageAdapter
 import UI.MainActivityUI
+import android.annotation.SuppressLint
 import android.content.*
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.WifiP2pConfig
@@ -31,17 +32,11 @@ import android.text.TextUtils
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
-import com.example.filemanager.AppManager
-import com.example.filemanager.NioClient
-import com.example.filemanager.NioServer
-import com.example.filemanager.utils.FileSortUtil
-import com.example.filemanager.R
+import com.example.filemanager.*
 import com.example.filemanager.fragments.FileListFragment
-import com.example.filemanager.utils.ServerUtil
 import com.example.filemanager.fragments.SettingDialogFragment
 import com.example.filemanager.receivers.WifiDirectReceiver
-import com.example.filemanager.utils.FileUtil
-import com.example.filemanager.utils.SnackbarUtil
+import com.example.filemanager.utils.*
 import java.net.InetAddress
 import java.util.*
 import kotlin.collections.ArrayList
@@ -207,10 +202,7 @@ class MainActivity : AppCompatActivity() {
                 //服务发现
                 discoverService()
 
-                if(SERVICE_PARAM.contains("address")){
-                    Log.i("sync",SERVICE_PARAM["address"]!!)
-                    FileUtil.doFileSync(SERVICE_PARAM["address"]!!)
-                }
+
             }
         }
 
@@ -221,8 +213,9 @@ class MainActivity : AppCompatActivity() {
         //  Create a string map containing information about your service.
         val record = HashMap<String,String>()
         val ipformat = getString(R.string.httpadd)
-        record.put("servicename","filesync")
+        record["servicename"] = "filesync"
         record["serverport"] = String.format(ipformat, ServerUtil.ip, CONFIG["port"])
+        Log.i("wifip2p","record:"+record.toString())
 
 
         // Service information.  Pass it an instance name, service type
@@ -238,10 +231,12 @@ class MainActivity : AppCompatActivity() {
             override fun onSuccess() {
                 // Command successful! Code isn't necessarily needed here,
                 // Unless you want to update the UI or add logging statements.
+                Log.i("wifip2p","addservice success!")
             }
 
             override fun onFailure(p0: Int) {
                 // Command failed.  Check for P2P_UNSUPPORTED, ERROR, or BUSY
+                Log.i("wifip2p","addservice error:"+p0)
             }
         })
     }
@@ -251,6 +246,10 @@ class MainActivity : AppCompatActivity() {
         val txtListener = WifiP2pManager.DnsSdTxtRecordListener { _, record, _ ->
             Log.i("wifip2p",record.toString())
             SERVICE_PARAM["address"] = record["serverport"]!!
+            //发生消息执行同步
+            val msg = Message()
+            msg.arg1 = 1
+            handler.sendMessage(msg)
         }
 
         val servListener = WifiP2pManager.DnsSdServiceResponseListener{instanceName, _,
@@ -267,27 +266,31 @@ class MainActivity : AppCompatActivity() {
 
         }
         mManager?.setDnsSdResponseListeners(mChannel,servListener,txtListener)
-        val serviceRequest = WifiP2pDnsSdServiceRequest.newInstance()
+        val serviceRequest = WifiP2pDnsSdServiceRequest.newInstance("_wifip2p", "_presence._tcp")
         mManager?.addServiceRequest(mChannel, serviceRequest, object :WifiP2pManager.ActionListener{
             override fun onSuccess() {
                 //Success
+                Log.i("wifip2p","addservicerequest success!")
+                mManager?.discoverServices(mChannel,object :WifiP2pManager.ActionListener{
+                    override fun onSuccess() {
+                        // Success!
+                        Log.i("wifip2p","discoverservices success!")
+                    }
+
+                    override fun onFailure(p0: Int) {
+                        Log.e("wifip2p","discoverservices errorcode:"+p0)
+                        WifiP2pManager.BUSY
+                    }
+
+                })
             }
 
             override fun onFailure(p0: Int) {
-                Log.e("wifip2p","errorcode:"+p0)
+                Log.e("wifip2p","addservicerequest errorcode:"+p0)
             }
 
         })
-        mManager?.discoverServices(mChannel,object :WifiP2pManager.ActionListener{
-            override fun onSuccess() {
-                // Success!
-            }
 
-            override fun onFailure(p0: Int) {
-                Log.e("wifip2p","errorcode:"+p0)
-            }
-
-        })
     }
 
     //开启wifi direct进行文件同步
@@ -447,6 +450,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 定义Handler
+     */
+    private var handler = @SuppressLint("HandlerLeak")
+    object : Handler() {
+        override fun handleMessage(msg: Message) {
+            //执行同步
+            when {
+                msg.arg1 == 1 -> {
+                    Log.i("sync",SERVICE_PARAM.toString())
+                    if(SERVICE_PARAM.contains("address")){
+                        Log.i("sync","同步目标:"+SERVICE_PARAM["address"]!!)
+                        FileUtil.doFileSync(SERVICE_PARAM["address"]!!)
+                    }
+                }
+            }
+
+        }
+    }
     override fun onPause() {
         super.onPause()
         stopFileSync()

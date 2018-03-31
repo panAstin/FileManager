@@ -440,7 +440,7 @@ class FileListFragment : Fragment() {
         }
         Handler().postDelayed( { //消息处理延迟执行
             fmadapter?.notifyDataSetChanged()
-        },1000)
+        },1500)
     }
 
     //提示信息
