@@ -235,11 +235,12 @@ object FileUtil {
      * 新建文件夹
      * @param folderPath 文件夹路径
      */
-     fun createMkdir(folderPath: String) {
+     fun createMkdir(folderPath: String):Boolean {
         val folder = File(folderPath)
         if (!folder.exists()) {
-            folder.mkdir()
+            return folder.mkdir()
         }
+        return false
     }
 
     /**

@@ -85,6 +85,16 @@ object RequestControlHandler{
     }
 
     /**
+     * 新建文件夹请求
+     */
+    fun mkdir(params:Map<String,String>):Boolean{
+        val path = FileUtil.ROOT_PATH + URLDecoder.decode(params["path"],"utf-8")
+        val dictname = URLDecoder.decode(params["dictname"],"utf-8")
+        val dictpath = path + File.separator + dictname
+        return FileUtil.createMkdir(dictpath)
+    }
+
+    /**
      * 重命名请求
      */
     fun rename(params:Map<String,String>):Boolean {
@@ -94,10 +104,7 @@ object RequestControlHandler{
         val newname = URLDecoder.decode(params["newfile"],"utf-8")
         val oldfile = File(path + File.separator + oldname)
         val newfile = File(path + File.separator + newname)
-        if(FileUtil.renameFile(oldfile,newfile)){
-            return true
-        }
-        return false
+        return FileUtil.renameFile(oldfile,newfile)
     }
 
     /**

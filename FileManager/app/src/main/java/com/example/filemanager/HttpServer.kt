@@ -1,7 +1,6 @@
 package com.example.filemanager
 
 import android.content.res.AssetManager
-import android.os.Environment
 import android.util.Log
 import com.example.filemanager.response.RequestControlHandler
 import com.example.filemanager.response.RequestTransferHandler
@@ -119,6 +118,16 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                     }else{
                         throw FileNotFoundException("文件未找到")
                     }
+                }
+
+                "mkdir" ->{  //新建文件夹
+                    val ja = JSONObject()
+                    if(RequestControlHandler.mkdir(session.parms)){
+                        ja.put("result","Success")
+                    }else{
+                        ja.put("result","Fail")
+                    }
+                    return Response(Response.Status.OK, MIME_JSON,ja.toString())
                 }
 
                 "delete" -> {  //文件删除
