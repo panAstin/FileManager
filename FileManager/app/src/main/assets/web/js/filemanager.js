@@ -262,6 +262,32 @@ var fileamount = 0; //总文件数量
         $("body").append(alertdiv);
     };
 
+    //新建文件夹弹窗
+    function showmkdir(){
+        $("#inputModalLabel").text("新建文件夹");
+        $("#inputbtn").click(function(){
+            var cpath = "";
+            $.each(currentpath,function(index,value){
+                cpath += value + "/";
+            });
+            var inputname = $("#inputname").val();
+            if(inputname==""){
+                showalert("warning","文件名不能为空！");
+            }else{
+                xmlhttp=$.ajax({type:"POST",url:"mkdir",data:{path:cpath,dictname:inputname},async:true,success:function(data){
+                    if(data["message"] == "Success"){
+                        showalert("success","操作成功");
+                        //refreshFile();
+                    }else{
+                        showalert("danger","操作失败");
+                    }
+                    }
+                });    
+            }
+        });
+        $("#inputModal").modal('show');
+    }
+
     //重命名弹窗
     function showrename(){
         if(sfiles.size>1){
@@ -271,37 +297,31 @@ var fileamount = 0; //总文件数量
             //未选中文件
             showalert("warning","请先选择文件");
         }else{
-            $("#fileModalLabel").text("重命名");
-            $("#fmodalbody").empty();
-            var renameform = $("<form></form>").addClass("form-inline");
-            var formgroup = $("<div></div>").addClass("form-group");
-            var inputname = $("<input>").addClass("form-control").attr({"type":"text","id":"newname"});
-            var fnames = sfiles.values();
+            $("#inputModalLabel").text("重命名");
+            var tempname;
             sfiles.forEach(function(oldname){
-                inputname.val(oldname);
+                tempname = oldname;
             });
-            var renamebtn = $("<button></button>").addClass("btn btn-default").attr("onclick","rename()").html("确定");
-            formgroup.append(inputname);
-            formgroup.append(renamebtn);
-            renameform.append(formgroup);
-            $("#fmodalbody").append(renameform);
-            $("#fileModal").modal('show');
+            $("#inputname").val(tempname);
+            $("#inputbtn").click(function(){
+                //进行重命名
+                var cpath = "";
+                $.each(currentpath,function(index,value){
+                    cpath += value + "/";
+                });
+                var inputname = $("#inputname").val();
+                xmlhttp=$.ajax({type:"POST",url:"rename",data:{path:cpath,oldname:tempname,newname:inputname},async:true,success:function(data){
+                    if(data["message"] == "Success"){
+                        showalert("success","操作成功");
+                        refreshFile();
+                    }else{
+                        showalert("danger","操作失败");
+                    }
+                }
+                });    
+            });
+            $("#inputModal").modal('show');
         }
-    }
-
-    //重命名
-    function rename(){
-        //进行重命名
-        var cpath = "";
-        $.each(currentpath,function(index,value){
-            cpath += value + "/";
-        });
-        var inputname = $("#newname").val();
-        xmlhttp=$.ajax({type:"POST",url:"renamefile",data:{path:cpath,oldname:sfiles[0],newname:inputname},async:true,success:function(){
-            showalert("success","操作成功");
-            refreshFile();
-            }
-        });    
     }
 
     //删除文件
@@ -317,9 +337,13 @@ var fileamount = 0; //总文件数量
             });
             files = files.substring(0,files.length-1);
 
-            xmlhttp=$.ajax({type:"POST",url:"deletefile",data:{path:cpath,file:files},async:true,success:function(){
-                showalert("success","操作成功");
-                refreshFile();
+            xmlhttp=$.ajax({type:"POST",url:"delete",data:{path:cpath,filenames:files},async:true,success:function(data){
+                if(data["message"] == "Success"){
+                    showalert("success","操作成功");
+                    refreshFile();
+                }else{
+                    showalert("danger","操作失败");
+                }
                 }
             });    
         }else{

@@ -100,8 +100,8 @@ object RequestControlHandler{
     fun rename(params:Map<String,String>):Boolean {
         Log.i("Andserver","Params"+params.toString())
         val path = FileUtil.ROOT_PATH + URLDecoder.decode(params["path"],"utf-8")
-        val oldname = URLDecoder.decode(params["oldfile"],"utf-8")
-        val newname = URLDecoder.decode(params["newfile"],"utf-8")
+        val oldname = URLDecoder.decode(params["oldname"],"utf-8")
+        val newname = URLDecoder.decode(params["newname"],"utf-8")
         val oldfile = File(path + File.separator + oldname)
         val newfile = File(path + File.separator + newname)
         return FileUtil.renameFile(oldfile,newfile)

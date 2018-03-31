@@ -123,9 +123,9 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                 "mkdir" ->{  //新建文件夹
                     val ja = JSONObject()
                     if(RequestControlHandler.mkdir(session.parms)){
-                        ja.put("result","Success")
+                        ja.put("message","Success")
                     }else{
-                        ja.put("result","Fail")
+                        ja.put("message","Fail")
                     }
                     return Response(Response.Status.OK, MIME_JSON,ja.toString())
                 }
@@ -133,9 +133,9 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                 "delete" -> {  //文件删除
                     val ja = JSONObject()
                     if(RequestControlHandler.delete(session.parms)){
-                        ja.put("result","Success")
+                        ja.put("message","Success")
                     }else{
-                        ja.put("result","Fail")
+                        ja.put("message","Fail")
                     }
                     return Response(Response.Status.OK, MIME_JSON,ja.toString())
                 }
@@ -143,9 +143,9 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                 "rename" -> {  //重命名
                     val ja = JSONObject()
                     if(RequestControlHandler.rename(session.parms)){
-                        ja.put("result","Success")
+                        ja.put("message","Success")
                     }else{
-                        ja.put("result","Fail")
+                        ja.put("message","Fail")
                     }
                     return Response(Response.Status.OK, MIME_JSON,ja.toString())
                 }
