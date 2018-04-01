@@ -172,17 +172,29 @@ class MainActivity : AppCompatActivity() {
             try {
                 mManager?.clearLocalServices(mChannel,object :WifiP2pManager.ActionListener{
                     override fun onFailure(p0: Int) {
-                        Log.e("wifip2p","errorcode:"+p0)
+                        Log.e("wifip2p","errorcode:$p0")
                     }
 
                     override fun onSuccess() {
+                        Log.i("wifip2p","clear services success")
                         mManager?.clearServiceRequests(mChannel,object :WifiP2pManager.ActionListener{
                             override fun onSuccess() {
                                 //Success
+                                Log.i("wifip2p","clear servicerequests success")
+
+                                if (SERVER_STATUS){
+                                    Log.i("wifip2p","注册服务")
+                                    //注册本地服务
+                                    startRegistration()
+                                }else{
+                                    Log.i("wifip2p","服务发现")
+                                    //服务发现
+                                    discoverService()
+                                }
                             }
 
                             override fun onFailure(p0: Int) {
-                                Log.e("wifip2p","errorcode:"+p0)
+                                Log.e("wifip2p","errorcode:$p0")
                             }
 
                         })
@@ -191,18 +203,6 @@ class MainActivity : AppCompatActivity() {
                 })
             }catch (e:Exception){
                 Log.e("wifip2p","错误："+e)
-            }
-
-            if (SERVER_STATUS){
-                Log.i("wifip2p","注册服务")
-                //注册本地服务
-                startRegistration()
-            }else{
-                Log.i("wifip2p","服务发现")
-                //服务发现
-                discoverService()
-
-
             }
         }
 
@@ -214,7 +214,7 @@ class MainActivity : AppCompatActivity() {
         val record = HashMap<String,String>()
         val ipformat = getString(R.string.httpadd)
         record["servicename"] = "filesync"
-        record["serverport"] = String.format(ipformat, ServerUtil.ip, CONFIG["port"])
+        record["serveraddr"] = String.format(ipformat, ServerUtil.ip, CONFIG["port"])
         Log.i("wifip2p","record:"+record.toString())
 
 
@@ -236,7 +236,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onFailure(p0: Int) {
                 // Command failed.  Check for P2P_UNSUPPORTED, ERROR, or BUSY
-                Log.i("wifip2p","addservice error:"+p0)
+                Log.i("wifip2p","addservice error:$p0")
             }
         })
     }
@@ -245,7 +245,11 @@ class MainActivity : AppCompatActivity() {
     private fun discoverService() {
         val txtListener = WifiP2pManager.DnsSdTxtRecordListener { _, record, _ ->
             Log.i("wifip2p",record.toString())
-            SERVICE_PARAM["address"] = record["serverport"]!!
+            try {
+                SERVICE_PARAM["address"] = record["serveraddr"]!!
+            }catch (e:Exception){
+                Log.e("wifip2p","获取服务器地址出错:$e")
+            }
             //发生消息执行同步
             val msg = Message()
             msg.arg1 = 1
@@ -266,8 +270,9 @@ class MainActivity : AppCompatActivity() {
 
         }
         mManager?.setDnsSdResponseListeners(mChannel,servListener,txtListener)
-        val serviceRequest = WifiP2pDnsSdServiceRequest.newInstance("_wifip2p", "_presence._tcp")
-        mManager?.addServiceRequest(mChannel, serviceRequest, object :WifiP2pManager.ActionListener{
+        mManager?.addServiceRequest(mChannel,
+                WifiP2pDnsSdServiceRequest.newInstance("_wifip2p", "_presence._tcp"),
+                object :WifiP2pManager.ActionListener{
             override fun onSuccess() {
                 //Success
                 Log.i("wifip2p","addservicerequest success!")
@@ -278,15 +283,14 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     override fun onFailure(p0: Int) {
-                        Log.e("wifip2p","discoverservices errorcode:"+p0)
-                        WifiP2pManager.BUSY
+                        Log.e("wifip2p","discoverservices errorcode:$p0")
                     }
 
                 })
             }
 
             override fun onFailure(p0: Int) {
-                Log.e("wifip2p","addservicerequest errorcode:"+p0)
+                Log.e("wifip2p","addservicerequest errorcode:$p0")
             }
 
         })
@@ -468,10 +472,6 @@ class MainActivity : AppCompatActivity() {
             }
 
         }
-    }
-    override fun onPause() {
-        super.onPause()
-        stopFileSync()
     }
 
     /**
