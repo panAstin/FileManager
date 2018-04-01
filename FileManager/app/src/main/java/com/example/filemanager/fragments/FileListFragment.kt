@@ -15,9 +15,9 @@ import android.widget.SearchView
 import android.widget.TextView
 import com.example.filemanager.*
 import com.example.filemanager.activities.MainActivity
-import com.example.filemanager.adapters.fmAdapter
-import com.example.filemanager.adapters.fmAdapter.Companion.selectFlag
-import com.example.filemanager.adapters.pathAdapter
+import com.example.filemanager.adapters.FMAdapter
+import com.example.filemanager.adapters.FMAdapter.Companion.selectFlag
+import com.example.filemanager.adapters.PathAdapter
 import com.example.filemanager.utils.*
 import java.io.File
 import kotlin.collections.ArrayList
@@ -33,8 +33,8 @@ class FileListFragment : Fragment() {
     private var patharea: RecyclerView? = null
     private var pathtxt:TextView? = null
     private var SEARCH_SWITCH = 0
-    private var pathadapter: pathAdapter? = null
-    private var fmadapter: fmAdapter? = null
+    private var pathadapter: PathAdapter? = null
+    private var fmadapter: FMAdapter? = null
     private var mactivity: MainActivity? = null
     private val positioncache = MemoryCacheUtils()     //滚动条位置缓存
     var msg = Message()    //消息
@@ -330,7 +330,7 @@ class FileListFragment : Fragment() {
             }
 
         })
-        pathadapter = pathAdapter(context)
+        pathadapter = PathAdapter(context)
         patharea!!.adapter = pathadapter
         mRecyclerView!!.layoutManager = LinearLayoutManager(view.context)          //设置布局管理器
         mRecyclerView!!.itemAnimator = DefaultItemAnimator()               //设置Item增加、移除动画
@@ -338,7 +338,7 @@ class FileListFragment : Fragment() {
         mRecyclerView!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(mRecyclerView) {
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder) {        //点击
                 if (selectFlag > 0) {           //选择模式下，点击选择文件项
-                    fmAdapter.isSelected!![viewHolder.adapterPosition] = when (fmAdapter.isSelected!![viewHolder.adapterPosition]) {
+                    FMAdapter.isSelected!![viewHolder.adapterPosition] = when (FMAdapter.isSelected!![viewHolder.adapterPosition]) {
                         true -> false
                         else -> true
                     }
@@ -405,7 +405,7 @@ class FileListFragment : Fragment() {
                 changeSelecFlag(viewHolder.adapterPosition)    //进入选择模式
             }
         })
-        fmadapter = fmAdapter(context)
+        fmadapter = FMAdapter(context)
         mRecyclerView?.adapter = fmadapter           //设置adapter
         showFileDir(FileUtil.ROOT_PATH)
     }
@@ -487,7 +487,7 @@ class FileListFragment : Fragment() {
      */
     private fun getSelectedFiles():ArrayMap<Int,ExFile>{
         val files = ArrayMap<Int,ExFile>()
-        for (isselect in fmAdapter.isSelected!!){
+        for (isselect in FMAdapter.isSelected!!){
             if(isselect.value){
                 files[isselect.key] = mFiles!![isselect.key]
             }
@@ -504,7 +504,7 @@ class FileListFragment : Fragment() {
             else ->{
                 fmadapter!!.initIsSelected()
                 if (position!=null){
-                    fmAdapter.isSelected!![position] = true
+                    FMAdapter.isSelected!![position] = true
                 }
                 1
             }
@@ -517,8 +517,8 @@ class FileListFragment : Fragment() {
      * 全选
      */
     private fun selectAll(){
-        if(fmadapter!!.getSelectCount()< fmAdapter.isSelected!!.size){
-            for (isselect in fmAdapter.isSelected!!){
+        if(fmadapter!!.getSelectCount()< FMAdapter.isSelected!!.size){
+            for (isselect in FMAdapter.isSelected!!){
                 if (!isselect.value){
                     isselect.setValue(true)
                 }

@@ -11,8 +11,8 @@ import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.FileType
 import com.example.filemanager.R
 
-internal class fsAdapter //参数初始化
-(context: Context) : RecyclerView.Adapter<fsAdapter.myViewHolder>() {
+internal class FSAdapter //参数初始化
+(context: Context) : RecyclerView.Adapter<FSAdapter.myViewHolder>() {
     private val inflater: LayoutInflater = LayoutInflater.from(context)
     private val Sortstxt = arrayOf("文档","下载","音乐","图片","视频","压缩包","安装包")
     private val Sortsimg = arrayOf(R.drawable.doc, R.drawable.download, R.drawable.music, R.drawable.img, R.drawable.video, R.drawable.zip, R.drawable.apk)

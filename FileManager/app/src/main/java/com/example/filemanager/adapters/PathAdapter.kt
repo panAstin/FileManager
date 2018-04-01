@@ -9,10 +9,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.example.filemanager.R
 import com.example.filemanager.fragments.FileListFragment
-import java.util.ArrayList
 
-internal class pathAdapter//参数初始化
-(context: Context) : RecyclerView.Adapter<pathAdapter.myViewHolder>() {
+internal class PathAdapter//参数初始化
+(context: Context) : RecyclerView.Adapter<PathAdapter.myViewHolder>() {
     private val inflater: LayoutInflater = LayoutInflater.from(context)
 
 

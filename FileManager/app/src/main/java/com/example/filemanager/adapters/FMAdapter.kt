@@ -19,8 +19,8 @@ import com.squareup.picasso.Transformation
 import java.io.File
 import kotlin.collections.ArrayList
 
-internal class fmAdapter//参数初始化
-(context: Context) : RecyclerView.Adapter<fmAdapter.myViewHolder>() {
+internal class FMAdapter//参数初始化
+(context: Context) : RecyclerView.Adapter<FMAdapter.myViewHolder>() {
     private val inflater: LayoutInflater
     private var exFiles: ArrayList<ExFile> = ArrayList()    //存储文件信息
     companion object {

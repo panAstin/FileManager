@@ -14,7 +14,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.*
 import com.example.filemanager.utils.FileSortUtil
 import com.example.filemanager.activities.SortActivity
-import com.example.filemanager.adapters.fsAdapter
+import com.example.filemanager.adapters.FSAdapter
 import com.example.filemanager.OnRecyclerItemClickListener
 import com.example.filemanager.R
 import android.content.Context
@@ -26,7 +26,7 @@ import android.content.IntentFilter
  */
 class FileSortFragment:Fragment() {
     private var sRecyclerView: RecyclerView? = null
-    private var fsadapter: fsAdapter? = null
+    private var fsadapter: FSAdapter? = null
     private var myreceiver:myReceiver?=null
 
     override fun onCreate(@Nullable savedInstanceState: Bundle?) {
@@ -72,7 +72,7 @@ class FileSortFragment:Fragment() {
                 startActivity(intent)
                 }
             })
-        fsadapter= fsAdapter(context)
+        fsadapter= FSAdapter(context)
         sRecyclerView!!.adapter=fsadapter  //设置adapter
     }
 

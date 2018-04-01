@@ -12,18 +12,17 @@ import android.support.v7.widget.Toolbar
 import android.util.ArrayMap
 import android.view.*
 import com.example.filemanager.*
-import com.example.filemanager.adapters.fmAdapter
+import com.example.filemanager.adapters.FMAdapter
 import com.example.filemanager.fragments.FileListFragment
 import com.example.filemanager.utils.*
 import org.jetbrains.anko.setContentView
 import java.io.File
-import java.util.concurrent.Executors
 
 
 class SortActivity : AppCompatActivity() {
     private var sFiles: ArrayList<ExFile>? = null
     private var sRecyclerView: RecyclerView? = null
-    private var fmadapter: fmAdapter? = null
+    private var fmadapter: FMAdapter? = null
     private val Sortstxt = arrayOf("文档","下载","音乐","图片","视频","压缩包","安装包")
     private var sort = -1
 
@@ -50,8 +49,8 @@ class SortActivity : AppCompatActivity() {
         sRecyclerView!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(sRecyclerView) {
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder) {        //点击
 
-                if(fmAdapter.selectFlag >0){
-                    fmAdapter.isSelected!![viewHolder.adapterPosition] = when(fmAdapter.isSelected!![viewHolder.adapterPosition] ){
+                if(FMAdapter.selectFlag >0){
+                    FMAdapter.isSelected!![viewHolder.adapterPosition] = when(FMAdapter.isSelected!![viewHolder.adapterPosition] ){
                         true -> false
                         else -> true
                     }
@@ -71,7 +70,7 @@ class SortActivity : AppCompatActivity() {
                 changeSelecFlag(viewHolder.adapterPosition)
             }
         })
-        fmadapter = fmAdapter(this)
+        fmadapter = FMAdapter(this)
         sRecyclerView?.adapter = fmadapter           //设置adapter
         showFiles(sort)
     }
@@ -142,7 +141,7 @@ class SortActivity : AppCompatActivity() {
             this.invalidateOptionsMenu()
             true
         })
-        if(fmAdapter.selectFlag >0){
+        if(FMAdapter.selectFlag >0){
             menuItemD.isVisible = true
             menuItemA.isVisible = true
             menu.add(Menu.NONE, Menu.FIRST + 4, 4, "复制")
@@ -206,7 +205,7 @@ class SortActivity : AppCompatActivity() {
     //获取被选中的文件
     private fun getSelectedFiles():ArrayMap<Int,ExFile>{
         val files = ArrayMap<Int,ExFile>()
-        for (isselect in fmAdapter.isSelected!!){
+        for (isselect in FMAdapter.isSelected!!){
             if(isselect.value){
                 files.put(isselect.key,sFiles!![isselect.key])
             }
@@ -216,12 +215,12 @@ class SortActivity : AppCompatActivity() {
 
     //更改选择模式标识
     fun changeSelecFlag(position: Int?){
-        fmAdapter.selectFlag = when{
-            fmAdapter.selectFlag > 0 -> 0
+        FMAdapter.selectFlag = when{
+            FMAdapter.selectFlag > 0 -> 0
             else ->{
                 fmadapter!!.initIsSelected()
                 if (position!=null){
-                    fmAdapter.isSelected!![position] = true
+                    FMAdapter.isSelected!![position] = true
                 }
                 1
             }
@@ -232,8 +231,8 @@ class SortActivity : AppCompatActivity() {
 
     //全选
     private fun selectAll(){
-        if(fmadapter!!.getSelectCount()< fmAdapter.isSelected!!.size){
-            for (isselect in fmAdapter.isSelected!!){
+        if(fmadapter!!.getSelectCount()< FMAdapter.isSelected!!.size){
+            for (isselect in FMAdapter.isSelected!!){
                 if (!isselect.value){
                     isselect.setValue(true)
                 }
@@ -247,7 +246,7 @@ class SortActivity : AppCompatActivity() {
     //退出确认
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.repeatCount == 0) {
-            if(fmAdapter.selectFlag > 0){
+            if(FMAdapter.selectFlag > 0){
                 changeSelecFlag(null)
                 return true
             }else{
