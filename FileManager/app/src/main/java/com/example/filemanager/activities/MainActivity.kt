@@ -20,8 +20,6 @@ import com.example.filemanager.adapters.FragmentPageAdapter
 import UI.MainActivityUI
 import android.annotation.SuppressLint
 import android.content.*
-import android.net.wifi.WpsInfo
-import android.net.wifi.p2p.WifiP2pConfig
 import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
@@ -36,7 +34,6 @@ import com.example.filemanager.*
 import com.example.filemanager.fragments.FileListFragment
 import com.example.filemanager.fragments.SettingDialogFragment
 import com.example.filemanager.utils.*
-import java.net.InetAddress
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -55,7 +52,6 @@ class MainActivity : AppCompatActivity() {
     private var address_tv:TextView? = null
     private var mManager:WifiP2pManager? = null
     private var mChannel:WifiP2pManager.Channel? = null
-    private var connected = false
     //申请权限
     private val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.INTERNET,Manifest.permission.ACCESS_WIFI_STATE,Manifest.permission.CHANGE_WIFI_STATE)
     private var serverUtil:ServerUtil? = null
@@ -295,46 +291,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    fun setIsWifiDirectEnable(enabled:Boolean){
-        //设备是否支持Wi-Fi Direct或者打开开关，通知一下
-        if(!enabled){
-
-        }
-    }
-
-    fun getChannel() = mChannel
-
-    fun onConnectDisabled(){
-        connected = false
-    }
-
-    val peerListListener = WifiP2pManager.PeerListListener { peers ->
-        //发现周围设备
-        val config = WifiP2pConfig()
-        if(!peers!!.deviceList.isEmpty()){
-            for(device in peers.deviceList){
-                Log.e("wifip2p",device.toString())
-                config.deviceAddress = device.deviceAddress
-                config.wps.setup = WpsInfo.PBC
-                mManager?.connect(mChannel,config,object:WifiP2pManager.ActionListener{
-                    override fun onFailure(reason: Int) {
-                        Log.e("wifip2p","connect failure->"+reason)
-                    }
-
-                    override fun onSuccess() {
-                        Log.e("wifip2p","connect success")
-                        connected = true
-                    }
-                })
-                if (connected){
-                    break
-                }
-            }
-        }else{
-            Log.e("wifip2p","No devices found")
-        }
-    }
-
     /**
      * 服务器控制按钮监听
      */
@@ -383,7 +339,7 @@ class MainActivity : AppCompatActivity() {
             when {
                 msg.arg1 == 1 -> {
                     Log.i("sync",SERVICE_PARAM.toString())
-                    if(SERVICE_PARAM.contains("address")){
+                    if (SERVICE_PARAM.contains("address") and ServerUtil.isIP(SERVICE_PARAM["address"]!!)) {
                         Log.i("sync","同步目标:"+SERVICE_PARAM["address"]!!)
                         FileUtil.doFileSync(SERVICE_PARAM["address"]!!)
                     }
