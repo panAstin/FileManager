@@ -35,7 +35,6 @@ import android.widget.TextView
 import com.example.filemanager.*
 import com.example.filemanager.fragments.FileListFragment
 import com.example.filemanager.fragments.SettingDialogFragment
-import com.example.filemanager.receivers.WifiDirectReceiver
 import com.example.filemanager.utils.*
 import java.net.InetAddress
 import java.util.*
@@ -56,8 +55,6 @@ class MainActivity : AppCompatActivity() {
     private var address_tv:TextView? = null
     private var mManager:WifiP2pManager? = null
     private var mChannel:WifiP2pManager.Channel? = null
-    private var mFilter:IntentFilter? = null
-    private var mWifiDirectReceiver:WifiDirectReceiver? = null
     private var connected = false
     //申请权限
     private val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.INTERNET,Manifest.permission.ACCESS_WIFI_STATE,Manifest.permission.CHANGE_WIFI_STATE)
@@ -297,67 +294,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    //开启wifi direct进行文件同步
-    private fun startFileSync(){
-        mFilter = IntentFilter()
-        //指示wifi p2p的状态变化
-        mFilter?.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
-        //指示可用节点列表的变化*
-        mFilter?.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
-        //指示连接状态的变化
-        mFilter?.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
-        //指示当前设备发生变化
-        mFilter?.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION)
-
-        //初始化wifi p2p的控制器
-        mManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
-        mChannel = mManager?.initialize(this, Looper.getMainLooper(),null)
-        //开启设备发现
-        mManager?.discoverPeers(mChannel,object: WifiP2pManager.ActionListener{
-            override fun onFailure(reason: Int) {
-                Log.e("wifip2p","搜索失败-->"+reason)
-            }
-
-            override fun onSuccess() {
-                Log.e("wifip2p","搜索成功")
-            }
-        })
-
-        mWifiDirectReceiver = WifiDirectReceiver(this,mManager!!)
-        registerReceiver(mWifiDirectReceiver,mFilter)
-    }
-
-    private fun stopFileSync(){
-        mManager?.stopPeerDiscovery(mChannel,object: WifiP2pManager.ActionListener{
-            override fun onFailure(reason: Int) {
-                Log.e("wifip2p","停止失败-->"+reason)
-            }
-
-            override fun onSuccess() {
-                Log.e("wifip2p","停止成功")
-            }
-        })
-        //注销广播
-        if(mWifiDirectReceiver != null) {
-            try{
-                unregisterReceiver(mWifiDirectReceiver)
-            }catch (e:Exception){
-                e.printStackTrace()
-                Log.e("wifip2p","广播未注册")
-            }
-            if (connected) {
-                mManager?.removeGroup(mChannel, object : WifiP2pManager.ActionListener {
-                    override fun onFailure(reason: Int) {
-                        Log.e("wifip2p", "移除失败-->" + reason)
-                    }
-
-                    override fun onSuccess() {
-                        Log.e("wifip2p", "移除成功")
-                    }
-                })
-            }
-        }
-    }
 
     fun setIsWifiDirectEnable(enabled:Boolean){
         //设备是否支持Wi-Fi Direct或者打开开关，通知一下
@@ -396,23 +332,6 @@ class MainActivity : AppCompatActivity() {
             }
         }else{
             Log.e("wifip2p","No devices found")
-        }
-    }
-
-    val connectionInfoListener = WifiP2pManager.ConnectionInfoListener { info ->
-        var address: InetAddress? = null
-        if (info!!.groupFormed && info.isGroupOwner){
-            Log.i("wifip2p","server")
-            address = info.groupOwnerAddress
-            NioServer(address)
-
-        }else if(info.groupFormed){
-            Log.i("wifip2p","client")
-            address = info.groupOwnerAddress
-            NioClient(address)
-        }
-        if(null != address){
-            connected = true
         }
     }
 
