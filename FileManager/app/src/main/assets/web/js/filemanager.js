@@ -116,7 +116,7 @@ var fileamount = 0; //总文件数量
             $("#fileList").append(afile);
             fileamount++;
         });
-        $("#fileList").on("click",".thumbnail",function(e){
+        $("#fileList").on("click",".thumbnail",function(e){     
             e.stopPropagation();
             fileselect(this);
         });
@@ -264,29 +264,8 @@ var fileamount = 0; //总文件数量
 
     //新建文件夹弹窗
     function showmkdir(){
-        $("#inputModalLabel").text("新建文件夹");
-        $("#inputbtn").click(function(){
-            var cpath = "";
-            $.each(currentpath,function(index,value){
-                cpath += value + "/";
-            });
-            var inputname = $("#inputname").val();
-            if(inputname==""){
-                showalert("warning","文件名不能为空！");
-            }else{
-                xmlhttp=$.ajax({type:"POST",url:"mkdir",data:{path:cpath,dictname:inputname},async:true,success:function(data){
-                    if(data["message"] == "Success"){
-                        showalert("success","操作成功");
-                        //refreshFile();
-                    }else{
-                        showalert("danger","操作失败");
-                    }
-                    }
-                });    
-            }
-        });
-        $("#inputModal").modal('show');
-    }
+        showmodal("mkdir");
+    };
 
     //重命名弹窗
     function showrename(){
@@ -297,58 +276,100 @@ var fileamount = 0; //总文件数量
             //未选中文件
             showalert("warning","请先选择文件");
         }else{
-            $("#inputModalLabel").text("重命名");
-            var tempname;
-            sfiles.forEach(function(oldname){
-                tempname = oldname;
-            });
-            $("#inputname").val(tempname);
-            $("#inputbtn").click(function(){
-                //进行重命名
-                var cpath = "";
-                $.each(currentpath,function(index,value){
-                    cpath += value + "/";
-                });
-                var inputname = $("#inputname").val();
-                xmlhttp=$.ajax({type:"POST",url:"rename",data:{path:cpath,oldname:tempname,newname:inputname},async:true,success:function(data){
-                    if(data["message"] == "Success"){
-                        showalert("success","操作成功");
-                        refreshFile();
-                    }else{
-                        showalert("danger","操作失败");
-                    }
-                }
-                });    
-            });
-            $("#inputModal").modal('show');
+            showmodal("rename");
         }
-    }
+    };
 
     //删除文件
     function deleteFile(){
         if(sfiles.size>0){
-            var cpath = "";
-            var files = "";
-            $.each(currentpath,function(index,value){
-                cpath += value + "/";
-            });
-            sfiles.forEach(function(item){
-                files += item + "/";
-            });
-            files = files.substring(0,files.length-1);
-
-            xmlhttp=$.ajax({type:"POST",url:"delete",data:{path:cpath,filenames:files},async:true,success:function(data){
-                if(data["message"] == "Success"){
-                    showalert("success","操作成功");
-                    refreshFile();
-                }else{
-                    showalert("danger","操作失败");
-                }
-                }
-            });    
+            showmodal("delete");
         }else{
             showalert("warning","请选择要删除的文件!");
         }
+    };
+
+    //弹窗
+    function showmodal(type){
+        if(type=="delete"){//删除弹窗
+            $("#iform").hide();
+            $("#checkmsg").show();
+            $("#inputfood").show();
+            $("#inputModalLabel").text("删除文件");
+        }else{
+            $("#iform").show();
+            $("#checkmsg").hide();
+            $("#inputfood").hide();
+            if(type=="rename"){//重命名弹窗
+                $("#inputModalLabel").text("重命名");
+                var tempname;
+                sfiles.forEach(function(oldname){
+                    tempname = oldname;
+                });
+                $("#inputname").val(tempname);
+                $("#inputbtn").click(function(){
+                    //进行重命名
+                    var cpath = "";
+                    $.each(currentpath,function(index,value){
+                        cpath += value + "/";
+                    });
+                    var inputname = $("#inputname").val();
+                    xmlhttp=$.ajax({type:"POST",url:"rename",data:{path:cpath,oldname:tempname,newname:inputname},async:true,success:function(data){
+                        if(data["message"] == "Success"){
+                            showalert("success","操作成功");
+                            refreshFile();
+                        }else{
+                            showalert("danger","操作失败");
+                        }
+                    }
+                    });    
+                });
+            }else if(type=="mkdir"){//新建文件夹弹窗
+                $("#inputbtn").click(function(){
+                    var cpath = "";
+                    $.each(currentpath,function(index,value){
+                        cpath += value + "/";
+                    });
+                    var inputname = $("#inputname").val();
+                    if(inputname==""){
+                        showalert("warning","文件名不能为空！");
+                    }else{
+                        xmlhttp=$.ajax({type:"POST",url:"mkdir",data:{path:cpath,dictname:inputname},async:true,success:function(data){
+                            if(data["message"] == "Success"){
+                                showalert("success","操作成功");
+                                //refreshFile();
+                            }else{
+                                showalert("danger","操作失败");
+                            }
+                            }
+                        });    
+                    }
+                });
+            }
+        }
+        $("#inputModal").modal('show');
+    };
+
+    function confirmdel(){
+        var cpath = "";
+        var files = "";
+        $.each(currentpath,function(index,value){
+            cpath += value + "/";
+        });
+        sfiles.forEach(function(item){
+            files += item + "/";
+        });
+        files = files.substring(0,files.length-1);
+
+        xmlhttp=$.ajax({type:"POST",url:"delete",data:{path:cpath,filenames:files},async:true,success:function(data){
+            if(data["message"] == "Success"){
+                showalert("success","操作成功");
+                refreshFile();
+            }else{
+                showalert("danger","操作失败");
+            }
+        }
+        });    
     }
 
     //路径点击
