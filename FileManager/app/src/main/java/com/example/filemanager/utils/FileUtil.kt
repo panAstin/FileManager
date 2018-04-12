@@ -90,8 +90,8 @@ object FileUtil {
                     filesjson.remove(file.name)
             }
         }
-        syncmap.put("sendfiles", syncfiles)
-        syncmap.put("receivefiles",filesjson)
+        syncmap["sendfiles"] = syncfiles
+        syncmap["receivefiles"] = filesjson
         return syncmap
     }
 

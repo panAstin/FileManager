@@ -2,8 +2,8 @@ package com.example.filemanager
 
 import android.content.res.AssetManager
 import android.util.Log
-import com.example.filemanager.response.RequestControlHandler
-import com.example.filemanager.response.RequestTransferHandler
+import com.example.filemanager.responses.RequestControlHandler
+import com.example.filemanager.responses.RequestTransferHandler
 import com.example.filemanager.utils.FileUtil
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONObject

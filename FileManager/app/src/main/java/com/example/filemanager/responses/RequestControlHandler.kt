@@ -1,4 +1,4 @@
-package com.example.filemanager.response
+package com.example.filemanager.responses
 
 import android.util.Log
 import com.example.filemanager.ExFile
