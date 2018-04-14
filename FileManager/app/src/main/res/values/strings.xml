@@ -17,4 +17,5 @@
     <string name="set0">端 口 号：</string>
     <string name="set1">文件存储路径：</string>
     <string name="set2">自 动 同 步：</string>
+    <string name="isexits">文件已存在！</string>
 </resources>

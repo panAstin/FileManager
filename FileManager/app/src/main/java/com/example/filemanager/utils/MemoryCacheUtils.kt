@@ -37,17 +37,17 @@ class MemoryCacheUtils {
 
     /**
      * 从内存中获取滚动条位置
-     * @param String 路径
+     * @param path 路径
      */
     fun getPositionFromMemory(path:String) = mMemoryCache?.get(path) //从内存读图片
 
     /**
      * 将滚动条存入内存
-     * @param String 标识
-     * @param Int 位置
+     * @param path 标识
+     * @param position 位置
      */
-    fun setPositionToMemory(path: String,positiono:Int){
-        mMemoryCache?.put(path,positiono)
+    fun setPositionToMemory(path: String, position: Int) {
+        mMemoryCache?.put(path, position)
         Log.i("mmmm","put")
     }
 }

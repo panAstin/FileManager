@@ -19,8 +19,7 @@ import com.squareup.picasso.Transformation
 import java.io.File
 import kotlin.collections.ArrayList
 
-internal class FMAdapter//参数初始化
-(context: Context) : RecyclerView.Adapter<FMAdapter.myViewHolder>() {
+internal class FMAdapter(context: Context) : RecyclerView.Adapter<FMAdapter.myViewHolder>() {
     private val inflater: LayoutInflater
     private var exFiles: ArrayList<ExFile> = ArrayList()    //存储文件信息
     companion object {
@@ -39,7 +38,7 @@ internal class FMAdapter//参数初始化
 
     override fun onBindViewHolder(holder: myViewHolder, position: Int) {
         val filebean = exFiles[position]
-        inititem(holder,filebean)
+        initItems(holder, filebean)
     }
 
     override fun getItemId(position: Int) = position.toLong()
@@ -54,7 +53,12 @@ internal class FMAdapter//参数初始化
         val cb : CheckBox = view.findViewById(R.id.checkBox) as CheckBox
     }
 
-    private fun inititem(holder: myViewHolder,exFile: ExFile) {
+    /**
+     * 初始化列表项数据
+     * @param holder 持有类
+     * @param exFile 数据源文件
+     */
+    private fun initItems(holder: myViewHolder, exFile: ExFile) {
         val i = exFiles.indexOf(exFile)
         holder.name.text = exFile.name
         holder.size.text = exFile.getSize()
@@ -69,7 +73,7 @@ internal class FMAdapter//参数初始化
             holder.image.setImageBitmap(exFile.getIcon())
         }
         holder.cb.tag = i
-        if (selectFlag >0){
+        if (selectFlag > 0) {    //判断选择模式
             holder.cb.visibility = View.VISIBLE
             holder.cb.isChecked = isSelected!![i]!!
         }else{

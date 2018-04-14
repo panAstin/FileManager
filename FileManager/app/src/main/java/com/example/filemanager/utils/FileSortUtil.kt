@@ -121,8 +121,7 @@ class FileSortUtil{
     /**
      * 获取图片类型文件
      */
-    private //projection 是定义返回的数据，selection 通常的sql 语句，例如  selection=MediaStore.Images.ImageColumns.MIME_TYPE+"=? " 那么 selectionArgs=new String[]{"jpg"};
-    val allPhoto: ArrayList<ExFile>
+    private val allPhoto: ArrayList<ExFile>//projection 是定义返回的数据，selection 通常的sql 语句，例如  selection=MediaStore.Images.ImageColumns.MIME_TYPE+"=? " 那么 selectionArgs=new String[]{"jpg"};
         get() {
             val photos = ArrayList<ExFile>()
             val projection = arrayOf(MediaStore.Images.ImageColumns.DATA, MediaStore.Images.ImageColumns.DISPLAY_NAME)

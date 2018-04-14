@@ -94,12 +94,11 @@ class FileListFragment : Fragment() {
                     })
                     //新建线程
                     ThreadPoolUtil.getThreadPool().execute{
-                         //需要花时间的方法
                          try {
                              isFinished = true
                              var result:ArrayList<ExFile> = ArrayList()
                              while(!Thread.currentThread().isInterrupted){
-                                 result= FileSearch(query, currentpath)
+                                 result = FileUtil.FileSearch(query, currentpath)  //执行查询
                                  Thread.currentThread().interrupt()
                              }
                              if(isFinished){  //正常结束
@@ -196,9 +195,12 @@ class FileListFragment : Fragment() {
                             override fun onDataResult(result: String) {
                                 // TODO Auto-generated method stub
                                 val newfilepath = "$currentpath/$result/"       //获取根目录
-                                FileUtil.createMkdir(newfilepath)
-                                val newfb = ExFile(newfilepath)
-                                fmadapter!!.addItem(newfb)
+                                if (FileUtil.createMkdir(newfilepath)) {
+                                    val newfb = ExFile(newfilepath)
+                                    fmadapter!!.addItem(newfb)
+                                } else {
+                                    displaySnackbar(getString(R.string.isexits))
+                                }
                             }
                         },true)
             }
@@ -212,7 +214,7 @@ class FileListFragment : Fragment() {
                         //需要花时间的方法
                         try {
                             val targetpath = currentpath + "/" + selectfile.name
-                            FileUtil.copy(selectfile.path, targetpath)
+                            FileUtil.copy(selectfile.path, FileUtil.fixPath(targetpath))
                             msg.arg1 = 2
                             val bundle = Bundle()
                             bundle.putString("path",targetpath)
@@ -250,11 +252,11 @@ class FileListFragment : Fragment() {
                                 var modifyName = result
                                 val fpath = file.parentFile.path
                                 var i = 0
-                                var newFile = File(fpath + "/" + modifyName)
+                                var newFile = File("$fpath/$modifyName")
                                 while (newFile.exists()){
                                     i++
                                     modifyName += "("+i.toString()+")"
-                                    newFile = File(fpath + "/" + modifyName)
+                                    newFile = File("$fpath/$modifyName")
                                 }
                                 if (FileUtil.renameFile(file,newFile)) {
                                     mFiles!![position] = ExFile(newFile.path)
@@ -269,7 +271,6 @@ class FileListFragment : Fragment() {
             Menu.FIRST + 6 ->{   //压缩
                 val files = ArrayList<File>()
                 val exfiles = getSelectedFiles()
-                var zipresult = false
                 for (exfile in exfiles){
                     if (!exfile.value.exists()) {
                         displaySnackbar("压缩失败")
@@ -282,9 +283,6 @@ class FileListFragment : Fragment() {
                     override fun onDataResult(result: String) {
                         val zippath = currentpath + File.separator + result + ".zip"
                         if (FileUtil.zipFiles(files,zippath)) {
-                            zipresult = true
-                        }
-                        if(zipresult){
                             fmadapter?.changeSelecFlag()
                             fmadapter!!.addItem(ExFile(zippath))
                             displaySnackbar("压缩成功")
@@ -334,8 +332,8 @@ class FileListFragment : Fragment() {
         patharea!!.adapter = pathadapter
         mRecyclerView!!.layoutManager = LinearLayoutManager(view.context)          //设置布局管理器
         mRecyclerView!!.itemAnimator = DefaultItemAnimator()               //设置Item增加、移除动画
-        //设置点击与长按监听器
         mRecyclerView!!.addOnItemTouchListener(object : OnRecyclerItemClickListener(mRecyclerView) {
+            //设置点击与长按监听器
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder) {        //点击
                 if (selectFlag > 0) {           //选择模式下，点击选择文件项
                     FMAdapter.isSelected!![viewHolder.adapterPosition] = when (FMAdapter.isSelected!![viewHolder.adapterPosition]) {
@@ -348,20 +346,21 @@ class FileListFragment : Fragment() {
                     Log.i("click",viewHolder.adapterPosition.toString())
                     val path = mFiles!![viewHolder.adapterPosition].path
                     val file = File(path)
-                    if (file.exists() && file.canRead()) {            // 文件存在并可读
+                    if (file.exists() && file.canRead()) {  // 文件存在并可读
                         when {
-                            file.isDirectory -> {
-                                positioncache.setPositionToMemory(currentpath,viewHolder.adapterPosition)
-                                showFileDir(path)
-                            }                      //显示子目录及文件
+                            file.isDirectory -> {   //文件夹
+                                positioncache.setPositionToMemory(currentpath, viewHolder.adapterPosition)  //记录当前滚动位置
+                                showFileDir(path) //显示子目录及文件
+                            }
                             FileUtil.getType(file) == FileType.zip -> //压缩文件，解压到当前目录
                                 DialogFragmentHelper.showConfirmDialog(fragmentManager,
-                                        "是否解压文件到当前目录？",object :IDialogResultListener<Int>{
+                                        "是否解压文件到当前目录？",
+                                        object : IDialogResultListener<Int> {
                                     override fun onDataResult(result: Int) {
                                         if (-1 == result){
                                             //显示ProgressDialog
-                                            DialogFragmentHelper.showProgress(fragmentManager,"正在解压...",
-                                                    true,object :CommonDialogFragment.OnDialogCancelListener{
+                                            DialogFragmentHelper.showProgress(fragmentManager, "正在解压...", true,
+                                                    object : CommonDialogFragment.OnDialogCancelListener {
                                                 override fun onCancel() {
                                                     try {
                                                         displaySnackbar("解压已中断！")
@@ -371,7 +370,7 @@ class FileListFragment : Fragment() {
                                                 }
                                             })
                                             val mthread = Thread(Runnable {
-                                                //需要花时间的方法
+                                                //执行新线程
                                                 try {
                                                     val targetpath = currentpath + File.separator + file.nameWithoutExtension
                                                     if(FileUtil.unzipFile(file.path,targetpath)){
@@ -438,48 +437,15 @@ class FileListFragment : Fragment() {
         if (position != null) {
             mRecyclerView?.scrollToPosition(position as Int)
         }
-        Handler().postDelayed( { //消息处理延迟执行
-            fmadapter?.notifyDataSetChanged()
+        Handler().postDelayed({
+            //延迟执行
+            fmadapter?.notifyDataSetChanged()  //更新列表数据
         },1500)
     }
 
     //提示信息
     private fun displaySnackbar(message: String) {
         SnackbarUtil.short(activity.window.decorView,message)
-    }
-
-    /**
-     * 文件搜索
-     *@param key 关键字
-     * @param path 路径
-     * @return 搜索结果
-     */
-    private fun FileSearch(key: String, path: String):ArrayList<ExFile> {
-        val exfiles = ArrayList<ExFile>()
-        val file = File(path)
-        val files = file.listFiles()
-        files
-                .filterNot {
-                    it.isHidden      //筛选隐藏文件
-                }
-                .forEach {
-                    if (it.isDirectory) {
-                        exfiles.addAll(FileSearch(key, it.path))
-                    }
-                    if (key in it.name) {
-                        val ef = ExFile(it.path)
-                        ef.initIcon()
-                        ThreadPoolUtil.getThreadPool().execute {
-                            try {
-                                ef.setSize(FileUtil.getAutoFileOrFilesSize(it.path))
-                            } catch (e: Exception) {
-                                e.stackTrace
-                            }
-                        }
-                        exfiles.add(ef)
-                    }
-                }
-        return  exfiles
     }
 
     /**

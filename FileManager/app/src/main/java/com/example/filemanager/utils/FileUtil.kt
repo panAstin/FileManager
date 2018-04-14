@@ -43,74 +43,6 @@ object FileUtil {
     }
 
     /**
-     * 根据服务器地址执行同步
-     */
-    fun doFileSync(address:String){
-        val map = getSyncFiles()
-        val httpclient = HttpClientUtil()
-        val resultjson = httpclient.getSyncList(address+"/synclist",map["sendfiles"]!!)
-        val filetosend = JSONObject(resultjson["sendfiles"].toString())
-        val filetoreceive = JSONObject(resultjson["receive"].toString())
-        Log.i("syncfile","同步开始")
-        try {
-            httpclient.postAsynFile(address+"/syncupload", getSyncFilelist(filetosend))
-            for (file in getSyncFilelist(filetoreceive)){
-                httpclient.downloadAsynFile(address+"/syncdownload/" + file.name,file)
-            }
-        }catch (e:Exception){
-            e.printStackTrace()
-            Log.e("syncfile","同步出错："+e.toString())
-        }
-        Log.i("syncfile","同步结束")
-    }
-
-
-    /**
-     * 根据json获取指定目录下待输出同步文件
-     * @param filesjson 已知jsonobject
-     * @return 待同步文件列表
-     */
-    @JvmOverloads
-    fun getSyncFiles(filesjson: JSONObject=JSONObject()):HashMap<String,JSONObject>{
-        val syncdict = File(SYNC_PATH)
-        val syncfiles = JSONObject()
-        val syncmap = HashMap<String,JSONObject>()
-        if (!syncdict.exists()){
-            syncdict.mkdir()
-        }
-        for (file in syncdict.listFiles()){
-            //需要发送的文件
-            when {
-                !filesjson.has(file.name) -> syncfiles.put(file.name,file.lastModified())
-                filesjson.getLong(file.name) < file.lastModified() -> {
-                    syncfiles.put(file.name,file.lastModified())
-                    filesjson.remove(file.name)
-                }
-                filesjson.getLong(file.name) == file.lastModified() -> //移除相同的文件
-                    filesjson.remove(file.name)
-            }
-        }
-        syncmap["sendfiles"] = syncfiles
-        syncmap["receivefiles"] = filesjson
-        return syncmap
-    }
-
-    /**
-     * 根据json获取指定目录下待获取同步文件列表
-     * @param jsonObject 已知jsonobject
-     * @return 文件列表
-     */
-    fun getSyncFilelist(jsonObject: JSONObject):ArrayList<File>{
-        val synclist = ArrayList<File>()
-
-        for (fname in jsonObject.keys()){
-            val f = File(SYNC_PATH + File.separator + fname)
-            synclist.add(f)
-        }
-        return synclist
-    }
-
-    /**
      * 获取指定文件大小
      * @param file 指定文件
      */
@@ -196,8 +128,22 @@ object FileUtil {
     }
 
     /**
+     * 重复文件名修正
+     */
+    fun fixPath(path: String): String {
+        var i = 1
+        var fixpath = path
+        val file = File(path)
+        while (File(fixpath).exists()) {
+            fixpath = fixpath.replaceAfterLast(File.separator, "${file.nameWithoutExtension}($i)${file.extension}")
+            i++
+        }
+        return fixpath
+    }
+
+
+    /**
      * 删除文件
-     * @param context
      * @param file 文件
      */
     fun deleteFile(file: File):Boolean{
@@ -219,7 +165,6 @@ object FileUtil {
 
     /**
      * 重命名文件
-     * @param context
      * @param oldfile 原文件
      * @param newfile 重命名后文件
      */
@@ -366,7 +311,7 @@ object FileUtil {
                     input.close()
                 }
                 if (temp.isDirectory) {//如果是子文件夹
-                    copyFolder(fromPath + "/" + f, toPath + "/" + f)
+                    copyFolder("$fromPath/$f", "$toPath/$f")
                 }
             }
 
@@ -384,7 +329,7 @@ object FileUtil {
      * @return 搜索结果
      */
      fun FileSearch(key: String, path: String):ArrayList<ExFile> {
-        val fileBeans = ArrayList<ExFile>()
+        val exfiles = ArrayList<ExFile>()
         val file = File(path)
         val files = file.listFiles()
         files
@@ -393,14 +338,14 @@ object FileUtil {
                 }
                 .forEach {
                     if (it.isDirectory) {
-                        fileBeans.addAll(FileSearch(key, it.path))
+                        exfiles.addAll(FileSearch(key, it.path))
                     }
                     if (key in it.name) {
-                        val fb = ExFile(it.path)
-                        fileBeans.add(fb)
+                        val ef = ExFile(it.path)
+                        exfiles.add(ef)
                     }
                 }
-        return  fileBeans
+        return exfiles
     }
 
     /**
@@ -449,12 +394,6 @@ object FileUtil {
      * 读取压缩文件列表
      *
      */
-    fun readZipfiles(filepath:String):ArrayList<ExFile>{
-        val ltag = "readzip"
-        val files = ArrayList<ExFile>()
-
-        return files
-    }
 
     /**
      * 递归压缩
@@ -474,10 +413,10 @@ object FileUtil {
                     .forEach {
                         if(it.isDirectory){
                             bDir = file.name + File.separator + it.name + File.separator
-                            Log.i(ltag,"bdir111 -->>" + bDir)
+                            Log.i(ltag, "bdir111 -->>$bDir")
                             recursionZip(zos, it,bDir)
                         }else{
-                            Log.i(ltag,"bdir222 -->>" + bDir)
+                            Log.i(ltag, "bdir222 -->>$bDir")
                             recursionZip(zos, it,bDir)
                         }
                     }
@@ -578,7 +517,7 @@ object FileUtil {
      * @param baseDir 指定根目录
      * @param absFileName 相对路径名
      */
-    fun getRealFile(baseDir: String,absFileName:String):File{
+    private fun getRealFile(baseDir: String, absFileName: String): File {
         val fileName = absFileName.replace("\\","/")
         val dirs = fileName.split("/")
         var ret = File(baseDir)
@@ -595,5 +534,74 @@ object FileUtil {
             ret = File(ret,fileName)
         }
         return ret
+    }
+
+
+    /**
+     * 根据服务器地址执行同步
+     */
+    fun doFileSync(address: String) {
+        val map = getSyncFiles()
+        val httpclient = HttpClientUtil()
+        val resultjson = httpclient.getSyncList(address + "/synclist", map["sendfiles"]!!)
+        val filetosend = JSONObject(resultjson["sendfiles"].toString())
+        val filetoreceive = JSONObject(resultjson["receive"].toString())
+        Log.i("syncfile", "同步开始")
+        try {
+            httpclient.postAsynFile(address + "/syncupload", getSyncFilelist(filetosend))
+            for (file in getSyncFilelist(filetoreceive)) {
+                httpclient.downloadAsynFile(address + "/syncdownload/" + file.name, file)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("syncfile", "同步出错：" + e.toString())
+        }
+        Log.i("syncfile", "同步结束")
+    }
+
+
+    /**
+     * 根据json获取指定目录下待输出同步文件
+     * @param filesjson 已知jsonobject
+     * @return 待同步文件列表
+     */
+    @JvmOverloads
+    fun getSyncFiles(filesjson: JSONObject = JSONObject()): HashMap<String, JSONObject> {
+        val syncdict = File(SYNC_PATH)
+        val syncfiles = JSONObject()
+        val syncmap = HashMap<String, JSONObject>()
+        if (!syncdict.exists()) {
+            syncdict.mkdir()
+        }
+        for (file in syncdict.listFiles()) {
+            //需要发送的文件
+            when {
+                !filesjson.has(file.name) -> syncfiles.put(file.name, file.lastModified())
+                filesjson.getLong(file.name) < file.lastModified() -> {
+                    syncfiles.put(file.name, file.lastModified())
+                    filesjson.remove(file.name)
+                }
+                filesjson.getLong(file.name) == file.lastModified() -> //移除相同的文件
+                    filesjson.remove(file.name)
+            }
+        }
+        syncmap["sendfiles"] = syncfiles
+        syncmap["receivefiles"] = filesjson
+        return syncmap
+    }
+
+    /**
+     * 根据json获取指定目录下待获取同步文件列表
+     * @param jsonObject 已知jsonobject
+     * @return 文件列表
+     */
+    fun getSyncFilelist(jsonObject: JSONObject): ArrayList<File> {
+        val synclist = ArrayList<File>()
+
+        for (fname in jsonObject.keys()) {
+            val f = File(SYNC_PATH + File.separator + fname)
+            synclist.add(f)
+        }
+        return synclist
     }
 }

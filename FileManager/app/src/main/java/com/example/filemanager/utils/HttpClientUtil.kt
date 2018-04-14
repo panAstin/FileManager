@@ -43,7 +43,7 @@ class HttpClientUtil{
     fun getSyncList(url: String,jsonObject: JSONObject):JSONObject{
         val mbody = RequestBody.create(JSON_TYPE,jsonObject.toString())
         val requet = Request.Builder()
-                .url(url+ "/getsyncfiles")
+                .url("$url/getsyncfiles")
                 .post(mbody)
                 .build()
         var result = JSONObject()
@@ -55,7 +55,7 @@ class HttpClientUtil{
             }
 
             override fun onFailure(call: Call?, e: IOException?) {
-                Log.e("FileSync","获取同步文件失败  "+e)
+                Log.e("FileSync", "获取同步文件失败  $e")
             }
 
         })
@@ -71,7 +71,7 @@ class HttpClientUtil{
         for (file in filelist){
             if(file.exists()){
                 Log.i("file",file.name)
-                mbody.addFormDataPart("file" + i,file.name, RequestBody.create(
+                mbody.addFormDataPart("file$i", file.name, RequestBody.create(
                         MediaType.parse(FileUtil.getMIMEType(file)+"; charset=utf-8"),file))
                 i++
             }
@@ -82,7 +82,7 @@ class HttpClientUtil{
                 .build()
         postAsynHttp(request,object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e("FileSync","发送同步文件失败  "+e)
+                Log.e("FileSync", "发送同步文件失败  $e")
             }
 
             @Throws(IOException::class)
@@ -106,7 +106,7 @@ class HttpClientUtil{
     fun downloadAsynFile(url: String,file: File) {
         getAsynHttp(url,object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.d("syncfile", "下载请求失败:" + e)
+                Log.d("syncfile", "下载请求失败:$e")
             }
 
             override fun onResponse(call: Call, response: Response) {

@@ -195,7 +195,7 @@ class MainActivity : AppCompatActivity() {
 
                 })
             }catch (e:Exception){
-                Log.e("wifip2p","错误："+e)
+                Log.e("wifip2p", "错误：$e")
             }
         }
 
@@ -253,7 +253,7 @@ class MainActivity : AppCompatActivity() {
                 resourceType ->
             // Update the device name with the human-friendly version from
             // the DnsTxtRecord, assuming one arrived.
-            Log.i("wifip2p","service:name:"+instanceName+"  type:"+resourceType)
+            Log.i("wifip2p", "service:name:$instanceName  type:$resourceType")
             resourceType.deviceName = if (SERVICE_PARAM
                             .containsKey(resourceType.deviceAddress))
                 SERVICE_PARAM[resourceType.deviceAddress]
