@@ -60,13 +60,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         MainActivityUI().setContentView(this)
         //状态栏沉浸
-        //if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS or WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             window.statusBarColor = Color.TRANSPARENT
             window.navigationBarColor = Color.TRANSPARENT
-        //}
         checkPermissions()
 
         AppManager.getInstance(this)
@@ -201,40 +199,37 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    //注册服务
+    /**
+     * 注册服务
+     */
     private fun startRegistration() {
-        //  Create a string map containing information about your service.
-        val record = HashMap<String,String>()
+        val record = HashMap<String, String>()  //存放服务包含的信息
         val ipformat = getString(R.string.httpadd)
-        record["servicename"] = "filesync"
-        record["serveraddr"] = String.format(ipformat, ServerUtil.ip, CONFIG["port"])
+        record["servicename"] = "filesync"    //服务名称
+        record["serveraddr"] = String.format(ipformat, ServerUtil.ip, CONFIG["port"])  //服务器地址
         Log.i("wifip2p","record:"+record.toString())
 
-
-        // Service information.  Pass it an instance name, service type
-        // _protocol._transportlayer , and the map containing
-        // information other devices will want once they connect to this one.
+        // 服务实例名称、服务类型、包含的信息
         val serviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance("_wifip2p", "_presence._tcp", record)
 
-        // Add the local service, sending the service info, network channel,
-        // and listener that will be used to indicate success or failure of
-        // the request.
+        // 注册本地服务
         mManager?.addLocalService(mChannel, serviceInfo, object :WifiP2pManager.ActionListener {
             override fun onSuccess() {
-                // Command successful! Code isn't necessarily needed here,
-                // Unless you want to update the UI or add logging statements.
+                // 注册成功
                 Log.i("wifip2p","addservice success!")
             }
 
             override fun onFailure(p0: Int) {
-                // Command failed.  Check for P2P_UNSUPPORTED, ERROR, or BUSY
+                // 注册失败
                 Log.i("wifip2p","addservice error:$p0")
             }
         })
     }
 
-    //服务发现
+    /**
+     * 服务发现
+     */
     private fun discoverService() {
         val txtListener = WifiP2pManager.DnsSdTxtRecordListener { _, record, _ ->
             Log.i("wifip2p",record.toString())
@@ -243,7 +238,7 @@ class MainActivity : AppCompatActivity() {
             }catch (e:Exception){
                 Log.e("wifip2p","获取服务器地址出错:$e")
             }
-            //发生消息执行同步
+            //发送消息执行同步
             val msg = Message()
             msg.arg1 = 1
             handler.sendMessage(msg)
@@ -278,10 +273,8 @@ class MainActivity : AppCompatActivity() {
                     override fun onFailure(p0: Int) {
                         Log.e("wifip2p","discoverservices errorcode:$p0")
                     }
-
                 })
             }
-
             override fun onFailure(p0: Int) {
                 Log.e("wifip2p","addservicerequest errorcode:$p0")
             }

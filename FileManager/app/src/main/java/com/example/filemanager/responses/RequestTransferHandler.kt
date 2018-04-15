@@ -47,12 +47,8 @@ object RequestTransferHandler{
                 val tempFilepath = files[paramKey]
                 Log.i("file", tempFilepath)
                 val tempFile = File(tempFilepath)
-                val targetpath = targetdict + entry.value
-                if (File(targetpath).exists()) {
-                    return false
-                } else {
-                    moveFile(tempFile, targetpath)
-                }
+                val targetpath = FileUtil.fixPath(targetdict + entry.value)
+                return moveFile(tempFile, targetpath)
             }
         }
         return true
@@ -84,9 +80,15 @@ object RequestTransferHandler{
     /**
      * 移动文件到相应目录
      */
-    private fun moveFile(f:File,topath:String){
-        FileUtil.copy(f.path,topath)
-        f.delete()
+    private fun moveFile(f: File, topath: String): Boolean {
+        return try {
+            FileUtil.copy(f.path, topath)
+            f.delete()
+            true
+        } catch (e: Exception) {
+            Log.e("upload", "error:$e")
+            false
+        }
     }
 
     /**
@@ -98,7 +100,7 @@ object RequestTransferHandler{
         val fnames = URLDecoder.decode(params["filenames"],"utf-8")
         val fnamelist:List<String> = fnames.split("/")
         val zipName = fnamelist[0] + "等文件打包.zip"
-        val zipPath = path + File.separator + zipName
+        val zipPath = FileUtil.fixPath(path + File.separator + zipName)
         val files = ArrayList<File>()
         fnamelist
                 .map { path + File.separator + it }

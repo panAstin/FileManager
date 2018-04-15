@@ -318,7 +318,7 @@ class FileListFragment : Fragment() {
             override fun onItemClick(viewHolder: RecyclerView.ViewHolder?) {
                 var i = 1
                 var topath = FileUtil.ROOT_PATH
-                //点击的根据路径项得到跳转路径
+                //根据点击的路径项得到跳转路径
                 while (i <= viewHolder!!.adapterPosition) {
                     topath += "/" + Pathnotes[i]
                     i++

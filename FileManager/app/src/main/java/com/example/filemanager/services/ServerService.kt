@@ -18,7 +18,7 @@ class ServerService: Service() {
 
     override fun onCreate() {
         mAssetManager = assets
-        Log.i("fffffff",MainActivity.CONFIG.toString())
+        Log.i("serverservice", MainActivity.CONFIG.toString())
         val port = MainActivity.CONFIG["port"] as Int
         val savemode = MainActivity.CONFIG["mode"] as Int
 
