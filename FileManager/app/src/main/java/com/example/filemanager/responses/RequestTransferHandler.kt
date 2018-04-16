@@ -99,6 +99,9 @@ object RequestTransferHandler{
         val path = FileUtil.ROOT_PATH + URLDecoder.decode(params["path"],"utf-8")
         val fnames = URLDecoder.decode(params["filenames"],"utf-8")
         val fnamelist:List<String> = fnames.split("/")
+        if (fnamelist.size == 1) {
+            return path + File.separator + fnamelist[0]
+        }
         val zipName = fnamelist[0] + "等文件打包.zip"
         val zipPath = FileUtil.fixPath(path + File.separator + zipName)
         val files = ArrayList<File>()

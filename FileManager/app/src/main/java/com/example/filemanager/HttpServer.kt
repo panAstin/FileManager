@@ -102,7 +102,9 @@ class HttpServer(private val asset_mgr:AssetManager,private val mode:Int,port:In
                     if(path != null){
                         val response = Response(Response.Status.OK,"multipart/form-data", File(path).inputStream())
                         response.addHeader("Content-disposition", String.format("attachment; filename=\"%s\"", File(path).name))
-                        File(path).delete()
+                        if (filepath.contains("zip")) {
+                            File(path).delete()
+                        }
                         return response
                     }else{
                         throw FileNotFoundException("下载出错")
