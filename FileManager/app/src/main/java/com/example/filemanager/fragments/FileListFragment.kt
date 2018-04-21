@@ -193,7 +193,10 @@ class FileListFragment : Fragment() {
                 DialogFragmentHelper.showInsertDialog(fragmentManager,"请输入文件名称","",
                         object:IDialogResultListener<String>{
                             override fun onDataResult(result: String) {
-                                // TODO Auto-generated method stub
+                                if (result == "") {
+                                    displaySnackbar("文件名不能为空！")
+                                    return
+                                }
                                 val newfilepath = "$currentpath/$result/"       //获取根目录
                                 if (FileUtil.createMkdir(newfilepath)) {
                                     val newfb = ExFile(newfilepath)
@@ -249,6 +252,10 @@ class FileListFragment : Fragment() {
                 DialogFragmentHelper.showInsertDialog(fragmentManager,"重命名文件",file.name,
                         object:IDialogResultListener<String>{
                             override fun onDataResult(result: String) {
+                                if (result == "") {
+                                    displaySnackbar("文件名不能为空！")
+                                    return
+                                }
                                 var modifyName = result
                                 val fpath = file.parentFile.path
                                 var i = 0
@@ -281,6 +288,10 @@ class FileListFragment : Fragment() {
                 DialogFragmentHelper.showInsertDialog(fragmentManager,"输入压缩文件名","",
                         object:IDialogResultListener<String>{
                     override fun onDataResult(result: String) {
+                        if (result == "") {
+                            displaySnackbar("文件名不能为空！")
+                            return
+                        }
                         val zippath = FileUtil.fixPath(currentpath + File.separator + result + ".zip")
                         if (FileUtil.zipFiles(files,zippath)) {
                             fmadapter?.changeSelecFlag()
