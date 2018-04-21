@@ -243,8 +243,7 @@ class FileListFragment : Fragment() {
                     selectedFiles!!.add(exfile.value)
                 }
                 displaySnackbar("文件已复制")
-                fmadapter!!.changeSelecFlag()
-                mactivity?.invalidateOptionsMenu()
+                changeSelecFlag()
             }
             Menu.FIRST + 5 ->{   //重命名
                 val file = getSelectedFiles().valueAt(0)
@@ -302,7 +301,7 @@ class FileListFragment : Fragment() {
                         }
                     }
                 },true)
-
+                changeSelecFlag()
             }
         }
         return false
@@ -475,7 +474,8 @@ class FileListFragment : Fragment() {
     /**
      * 更改模式标识
      */
-    fun changeSelecFlag(position: Int?){
+    @JvmOverloads
+    fun changeSelecFlag(position: Int? = null) {
         selectFlag = when{
             selectFlag > 0 -> 0
             else ->{
@@ -502,7 +502,7 @@ class FileListFragment : Fragment() {
             }
             fmadapter!!.notifyDataSetChanged()
         }else {
-            changeSelecFlag(null)
+            changeSelecFlag()
         }
     }
 
@@ -553,13 +553,20 @@ class FileListFragment : Fragment() {
      * 返回键事件
      */
     fun onBack():Boolean{    //返回键
-        if(selectFlag == 1){          //退出选择模式
-            changeSelecFlag(null)
-            return true
-        } else if (currentpath!=FileUtil.ROOT_PATH){    //返回上级目录
-            val file = File(currentpath)
-            showFileDir(file.parent)
-            return true
+        when {
+            SEARCH_SWITCH == 1 -> {
+                SEARCH_SWITCH = 0
+                return true
+            }
+            selectFlag == 1 -> {          //退出选择模式
+                changeSelecFlag()
+                return true
+            }
+            currentpath != FileUtil.ROOT_PATH -> {    //返回上级目录
+                val file = File(currentpath)
+                showFileDir(file.parent)
+                return true
+            }
         }
         return false
     }
