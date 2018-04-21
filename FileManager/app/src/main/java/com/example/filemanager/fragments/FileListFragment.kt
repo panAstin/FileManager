@@ -213,8 +213,8 @@ class FileListFragment : Fragment() {
                     for (selectfile in selectedFiles!!) {
                         //需要花时间的方法
                         try {
-                            val targetpath = currentpath + "/" + selectfile.name
-                            FileUtil.copy(selectfile.path, FileUtil.fixPath(targetpath))
+                            val targetpath = FileUtil.fixPath(currentpath + "/" + selectfile.name)
+                            FileUtil.copy(selectfile.path, targetpath)
                             msg.arg1 = 2
                             val bundle = Bundle()
                             bundle.putString("path",targetpath)
@@ -281,7 +281,7 @@ class FileListFragment : Fragment() {
                 DialogFragmentHelper.showInsertDialog(fragmentManager,"输入压缩文件名","",
                         object:IDialogResultListener<String>{
                     override fun onDataResult(result: String) {
-                        val zippath = currentpath + File.separator + result + ".zip"
+                        val zippath = FileUtil.fixPath(currentpath + File.separator + result + ".zip")
                         if (FileUtil.zipFiles(files,zippath)) {
                             fmadapter?.changeSelecFlag()
                             fmadapter!!.addItem(ExFile(zippath))
@@ -372,7 +372,7 @@ class FileListFragment : Fragment() {
                                             val mthread = Thread(Runnable {
                                                 //执行新线程
                                                 try {
-                                                    val targetpath = currentpath + File.separator + file.nameWithoutExtension
+                                                    val targetpath = FileUtil.fixPath(currentpath + File.separator + file.nameWithoutExtension)
                                                     if(FileUtil.unzipFile(file.path,targetpath)){
                                                         msg.arg1 = 3
                                                     }else{

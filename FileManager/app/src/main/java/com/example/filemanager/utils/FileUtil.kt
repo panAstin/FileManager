@@ -134,8 +134,15 @@ object FileUtil {
         var i = 1
         var fixpath = path
         val file = File(path)
+        if (file.isDirectory) {
+            while (File(fixpath).exists()) {
+                fixpath = fixpath.replaceAfterLast(File.separator, "${file.name}($i)")
+                i++
+            }
+            return fixpath
+        }
         while (File(fixpath).exists()) {
-            fixpath = fixpath.replaceAfterLast(File.separator, "${file.nameWithoutExtension}($i)${file.extension}")
+            fixpath = fixpath.replaceAfterLast(File.separator, "${file.nameWithoutExtension}($i).${file.extension}")
             i++
         }
         return fixpath
