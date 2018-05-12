@@ -33,7 +33,7 @@ object RequestTransferHandler{
         val uploadpath = params["path"]
         val targetdict = when (mode) {
             0 -> {
-                FileUtil.ROOT_PATH + "/Download"
+                FileUtil.ROOT_PATH + File.separator + "Download"
             }
             else -> {
                 FileUtil.ROOT_PATH + uploadpath
@@ -47,7 +47,7 @@ object RequestTransferHandler{
                 val tempFilepath = files[paramKey]
                 Log.i("file", tempFilepath)
                 val tempFile = File(tempFilepath)
-                val targetpath = FileUtil.fixPath(targetdict + entry.value)
+                val targetpath = FileUtil.fixPath(targetdict + File.separator + entry.value)
                 return moveFile(tempFile, targetpath)
             }
         }

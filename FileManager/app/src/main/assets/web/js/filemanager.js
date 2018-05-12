@@ -148,6 +148,9 @@ var fileamount = 0; //总文件数量
     //初始化控件
     $(function (){
         $("#sfswitch input").bootstrapSwitch('state',false);  //开关控件
+        $('#uploadModal').on('hidden.bs.modal', function () {   
+            $("#uploadfile").fileinput("fileclear");       //关闭时清除内容
+        });
         $('#fileModal').on('hidden.bs.modal', function () {   //Modal控件
             $("#fmodalbody").empty();          //关闭时清除内容
         });
@@ -164,6 +167,7 @@ var fileamount = 0; //总文件数量
             });
             return {'path':uploadpath};
         },
+        autoReplace: true,
         //allowedFileExtensions : ['xls','jpg', 'png','gif'],
         maxFileCount: 10,   //同时最多上传10个文件
         //allowedFileTypes: ['image', 'video', 'flash'],  这是允许的文件类型 跟上面的后缀名还不是一回事
