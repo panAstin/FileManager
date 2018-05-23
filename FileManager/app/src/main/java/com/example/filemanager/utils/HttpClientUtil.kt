@@ -16,13 +16,16 @@ import org.json.JSONObject
  * Http客户端
  */
 class HttpClientUtil{
+    private val mOkHttpClient = OkHttpClient().newBuilder()
+            .retryOnConnectionFailure(true)
+            .build()
+
     private val JSON_TYPE = MediaType.parse("application/json; charset=utf-8")
 
     /**
      * Get请求
      */
     private fun getAsynHttp(url:String,callback: Callback) {
-        val mOkHttpClient = OkHttpClient()
         val requestBuilder = Request.Builder().url(url)
         //可以省略，默认是GET请求
         requestBuilder.method("GET", null)
@@ -35,15 +38,14 @@ class HttpClientUtil{
      * Post请求
      */
     private fun postAsynHttp(request: Request,callback: Callback) {
-        val mOkHttpClient = OkHttpClient()
         val call = mOkHttpClient.newCall(request)
         call.enqueue(callback)
     }
 
-    fun getSyncList(url: String,jsonObject: JSONObject):JSONObject{
-        val mbody = RequestBody.create(JSON_TYPE,jsonObject.toString())
+    fun getSyncList(url: String, params: String): JSONObject {
+        val mbody = RequestBody.create(JSON_TYPE, params)
         val requet = Request.Builder()
-                .url("$url/getsyncfiles")
+                .url(url)
                 .post(mbody)
                 .build()
         var result = JSONObject()
@@ -66,6 +68,9 @@ class HttpClientUtil{
      * 上传文件
      */
     fun postAsynFile(url: String,filelist:ArrayList<File>) {
+        if (filelist.isEmpty()) {
+            return
+        }
         val mbody = MultipartBody.Builder().setType(MultipartBody.FORM)
         var i = 1
         for (file in filelist){

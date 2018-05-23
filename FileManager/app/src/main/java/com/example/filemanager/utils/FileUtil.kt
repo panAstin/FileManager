@@ -551,8 +551,14 @@ object FileUtil {
         val map = getSyncFiles()
         val httpclient = HttpClientUtil()
         val resultjson = httpclient.getSyncList(address + "/synclist", map["sendfiles"]!!)
-        val filetosend = JSONObject(resultjson["sendfiles"].toString())
-        val filetoreceive = JSONObject(resultjson["receive"].toString())
+        val filetosend = when (resultjson.optString("sendfiles")) {
+            "" -> JSONObject()
+            else -> JSONObject(resultjson.optString("sendfiles"))
+        }
+        val filetoreceive = when (resultjson.optString("receive")) {
+            "" -> JSONObject()
+            else -> JSONObject(resultjson.optString("receive"))
+        }
         Log.i("syncfile", "同步开始")
         try {
             httpclient.postAsynFile(address + "/syncupload", getSyncFilelist(filetosend))
@@ -573,27 +579,31 @@ object FileUtil {
      * @return 待同步文件列表
      */
     @JvmOverloads
-    fun getSyncFiles(filesjson: JSONObject = JSONObject()): HashMap<String, JSONObject> {
+    fun getSyncFiles(filesjson: JSONObject = JSONObject()): HashMap<String, String> {
         val syncdict = File(SYNC_PATH)
         val syncfiles = JSONObject()
-        val syncmap = HashMap<String, JSONObject>()
+        val syncmap = HashMap<String, String>()
         if (!syncdict.exists()) {
             syncdict.mkdir()
         }
-        for (file in syncdict.listFiles()) {
-            //需要发送的文件
-            when {
-                !filesjson.has(file.name) -> syncfiles.put(file.name, file.lastModified())
-                filesjson.getLong(file.name) < file.lastModified() -> {
-                    syncfiles.put(file.name, file.lastModified())
-                    filesjson.remove(file.name)
+        try {
+            for (file in syncdict.listFiles()) {
+                //需要发送的文件
+                when {
+                    !filesjson.has(file.name) -> syncfiles.put(file.name, file.lastModified())
+                    filesjson.getLong(file.name) < file.lastModified() -> {
+                        syncfiles.put(file.name, file.lastModified())
+                        filesjson.remove(file.name)
+                    }
+                    filesjson.getLong(file.name) == file.lastModified() -> //移除相同的文件
+                        filesjson.remove(file.name)
                 }
-                filesjson.getLong(file.name) == file.lastModified() -> //移除相同的文件
-                    filesjson.remove(file.name)
             }
+        } catch (e: Exception) {
+            Log.e("getSync", e.toString())
         }
-        syncmap["sendfiles"] = syncfiles
-        syncmap["receivefiles"] = filesjson
+        syncmap["sendfiles"] = syncfiles.toString()
+        syncmap["receivefiles"] = filesjson.toString()
         return syncmap
     }
 

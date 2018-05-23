@@ -28,6 +28,7 @@ import android.support.v4.widget.DrawerLayout
 import android.support.v7.app.ActionBarDrawerToggle
 import android.text.TextUtils
 import android.util.Log
+import android.util.Patterns
 import android.widget.Button
 import android.widget.TextView
 import com.example.filemanager.*
@@ -332,9 +333,13 @@ class MainActivity : AppCompatActivity() {
             when {
                 msg.arg1 == 1 -> {
                     Log.i("sync",SERVICE_PARAM.toString())
-                    if (SERVICE_PARAM.contains("address") and ServerUtil.isIP(SERVICE_PARAM["address"]!!)) {
+                    if (SERVICE_PARAM.contains("address") and Patterns.WEB_URL.matcher(SERVICE_PARAM["address"]!!).matches()) {
                         Log.i("sync","同步目标:"+SERVICE_PARAM["address"]!!)
-                        FileUtil.doFileSync(SERVICE_PARAM["address"]!!)
+                        try {
+                            FileUtil.doFileSync(SERVICE_PARAM["address"]!!)
+                        } catch (e: Exception) {
+                            Log.e("sync", e.toString())
+                        }
                     }
                 }
             }
